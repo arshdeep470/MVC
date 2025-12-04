@@ -1,0 +1,15 @@
+@model Shield.Ui.App.ViewModels.AssignedAEViewModel
+
+<div class="card" style="padding:1.5rem 1rem 1.5rem 1rem">
+    <h3 style="border-bottom:2px solid #eceeef; padding-bottom: 0.75rem; margin-bottom: 2.25rem;">Warning</h3>
+
+    <p>User @Model.AssignedAE?.DisplayName (@Model.AssignedAE?.BemsId) is already assigned as AE in this LOTO @Model.LotoId.</p>
+
+    <hr />
+
+    <div class="text-center">
+        <button type="button" onclick="OnReturnClick()" class="btn btn-secondary-gray btn-rounded">
+            <i class="fa fa-arrow-left prefix" style="margin-right:0.5rem;"></i>Return
+        </button>
+    </div>
+</div>
