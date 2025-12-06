@@ -1,0 +1,562 @@
+@using Shield.Ui.App.Models.LotoModels
+
+@model Shield.Ui.App.ViewModels.LotoDetailViewModel
+@{
+	var currentUser = Model.SessionService.GetUserFromSession(Context);
+	var isLotoFromDiscrete = Model.Loto.Discrete != null;
+	var needsLockoutDisabledAttr = "";
+
+	if (Model.Loto.IsNeedsLockOut())
+	{
+		List<LotoIsolationsDiscreteHecp> discreteIsolations = Model.Loto.LotoAssociatedHecps.SelectMany(x => x.LotoIsolationsDiscreteHecp).ToList();
+
+		if (isLotoFromDiscrete)
+		{
+			List<Shield.Common.Models.Loto.Shared.Isolation> isolations = Model.Loto.Discrete.DiscreteDeactivationSteps
+				.Where(step => step.Isolations?.Count > 0)
+				.SelectMany(step => step.Isolations)
+				.ToList();
+
+			var unlockedIsolations = isolations.Where(iso => !iso.IsLocked).ToList();
+
+			if (unlockedIsolations.Count > 0 || isolations == null)
+			{
+				needsLockoutDisabledAttr = "disabled";
+			}
+		}
+		if (Model.Loto.LotoAssociatedHecps.Count > 0)
+		{
+			if (Model.Loto.HecpIsolationTags != null && Model.Loto.HecpIsolationTags.Count > 0)
+			{
+				var totalIsolations = Model.Loto.HecpIsolationTags.ToList();
+				var unlockedIsolations = Model.Loto.HecpIsolationTags.Where(iso => iso.IsLocked && iso.Id > 0).ToList();
+				if (unlockedIsolations.Count < totalIsolations.Count)
+				{
+					needsLockoutDisabledAttr = "disabled title=\"No isolations have been added to this LOTO.\"";
+				}
+			}
+		}
+		if (Model.Loto.HecpIsolationTags.Count == 0 && discreteIsolations.Count == 0) // DISABLE needs lockout button if there are no isolations, or if the current user doesn't have permission to lockout the LOTO
+		{
+			needsLockoutDisabledAttr = "disabled title=\"No isolations have been added to this LOTO.\"";
+		}
+		else if (Model.Loto.AssignedPAE?.BemsId != currentUser?.BemsId)
+		{
+			needsLockoutDisabledAttr = "disabled title=\"Only the assigned PAE can lockout a LOTO.\"";
+		}
+
+		if (Model.Header.Aircraft.AssignedGroupCoordinatorBems == 0 || Model.Header.Aircraft.AssignedGroupCoordinatorBems == null)
+		{
+			needsLockoutDisabledAttr = "disabled title=\"A GC needs to claim the line to perform lockout\"";
+		}
+
+	}
+
+	bool disableActionButton = false;
+	if (Model.Loto.AssignedPAE != null && Model.Loto.AssignedPAE.BemsId != currentUser.BemsId)
+	{
+		disableActionButton = true;
+	}
+
+	bool disableTransfer = disableActionButton || !Model.Loto.ShowTransfer();
+	string disableTransferAttr = "";
+	if (disableTransfer)
+	{
+		disableTransferAttr = "disabled";
+	}
+
+	string completeButtonDisabledAttr = "";
+	if (Model.Loto.TheAircraftGCBems == 0)
+	{
+		completeButtonDisabledAttr = "disabled title=\"A GC must claim responsibility for this line and you must be the assigned PAE before the LOTO can be completed\"";
+	}
+
+	bool disableComplete = disableActionButton || !Model.Loto.ShowComplete();
+	string disableCompleteAttr = "";
+	if (disableComplete)
+	{
+		disableCompleteAttr = "disabled";
+	}
+}
+
+@*Take care of isolation lockout logic*@
+@if (Model.Loto.Discrete != null)
+{
+	int discreteIsolationCount = Model.Loto.Discrete.DiscreteDeactivationSteps
+		.Where(step => step.Isolations?.Count > 0)
+		.SelectMany(step => step.Isolations)
+		.ToList().Count;
+
+	int discreteInitialIsolationLockedCount = Model.Loto.Discrete.DiscreteDeactivationSteps
+		.Where(step => step.Isolations?.Count > 0)
+		.SelectMany(step => step.Isolations)
+		.Where(isolation => isolation.IsLocked)
+		.ToList().Count;
+
+	if (discreteIsolationCount == discreteInitialIsolationLockedCount && !disableActionButton)
+	{
+		needsLockoutDisabledAttr = "";
+	}
+
+	<script type="text/javascript">
+		var discreteIsolationTotal = @Html.Raw(discreteIsolationCount);
+	</script>
+}
+
+<section id="loto-details" class="view intro-2 hm-stylish-strong">
+	<div class="modal fade" id="deleteLotoModal" tabindex="-1" role="dialog" aria-labelledby="deleteLotoModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-md" role="document">
+			<div class="modal-content">
+				<div class="modal-header blue darken-1 white-text">
+					<h4 class="modal-title">Delete LOTO</h4>
+					<button type="button" class="close text-white select-close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div id="deleteHecpModalBody">
+					<div class="modal-body" style="padding: 0rem 3.5rem 0 3.5rem; margin-top:1.2rem">
+						<label id="lblDeleteLotoConfirmation" class="select-line-label grey-text font-weight-normal"></label>
+					</div>
+
+					<div class="modal-footer top-space-lg" id="manageLinesAction">
+						<button type="button" class="btn btn-secondary-gray btn-rounded black-text" value="Cancel" data-dismiss="modal">
+							<i class="fa fa-times prefix" style="padding-right:.4rem; color:black !important; margin-top:-.19rem;"></i>
+							Cancel
+						</button>
+						<button id="deleteLotoSubmit" type="button" class="btn btn-primary btn-rounded float-right" onclick="deleteLoto('@Model.Loto.Id', '@Model.Header.Aircraft.Site', '@Model.Loto.Program', '@Model.Header.Aircraft.LineNumber')">OK</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="overrideTrainingLotoModal" tabindex="-1" role="dialog" aria-labelledby="OverrideTrainingLotoModalLabel" aria-hidden="true"> </div>
+
+	<div class="full-bg-img">
+		<div class="container">
+			<div class="row top-bottom-space">
+				@await Html.PartialAsync("../Shared/Partials/LineCardPartial", Model.Header.Aircraft)
+				@await Html.PartialAsync("../Shared/Partials/GroupCoordinatorCardPartial", Model.Header)
+			</div>
+			<br />
+			<div class="row">
+				<div class="align-items-center" style="width:100%;">
+					<div class="card">
+						<div class="logbook-header card-header card-header-lg col-md-12">
+							<div>
+								<h4 class="black-text float-left">LOTO Details</h4>
+								<button id="loto-status" style="border:none" class="loto-status-card loto-status-@Model.Loto.Status.Description.ToLower()">@Model.Loto.Status.DisplayName</button>
+
+								@if (Model.CurrentUser.RoleId == 2 || Model.CurrentUser.RoleId == 7 || Model.CurrentUser.RoleId == 8)
+								{
+									@if (Model.Loto.Status.Description.Equals("needslockout", StringComparison.OrdinalIgnoreCase))
+									{
+										<button class="float-right loto-status-card waves-light waves-ripple btn btn-primary" id="delete-a-loto" onclick="showDeleteLotoModal()" style="color:white">Delete Loto</button>
+									}
+								}
+							</div>
+						</div>
+
+						<div class="card-body outer-card-body">
+							<div class="row">
+								<div id="sign-in-card" class="col-md-4 col-xs-12">
+									<ul class="nav" role="tablist" style="margin-bottom:3px;">
+										<li class="loto-tab">
+											<a class="nav-link loto-tab-link active" style="font-size:small;" id="sign-in-tab" data-toggle="tab" href="#sign-in" role="tab" aria-controls="sign-in" aria-selected="true">PAE/AE SIGN-IN</a>
+										</li>
+										<li class="loto-tab">
+											<a class="nav-link loto-tab-link" style="font-size:small;" id="sign-in-visitor-tab" data-toggle="tab" href="#sign-in-visitor" role="tab" aria-controls="sign-in-visitor" aria-selected="false">NON BOEING AE SIGN-IN</a>
+										</li>
+									</ul>
+									<div>
+										<div class="tab-content" id="nav-tabContent">
+											<div class="card tab-pane fade show active" id="sign-in" role="tabpanel" aria-labelledby="sign-in-tab" style="border-top-left-radius: 0;">
+												<div id="sign-in-partial" class="card-body d-flex flex-column" style="margin-top:0%;">
+													@Html.Partial("Partials/LotoSignInCard", new Shield.Ui.App.ViewModels.LotoAEManagementViewModel
+													{
+													Header = Model.Header,
+													Loto = Model.Loto,
+													SessionService = Model.SessionService,
+													Message = Model.SignInCardMessage
+													})
+												</div>
+											</div>
+											<div class="card tab-pane fade" id="sign-in-visitor" role="tabpanel" aria-labelledby="sign-in-visitor-tab" style="border-top-left-radius: 0;">
+												<div id="visitor-sign-in-partial" class="card-body d-flex flex-column" style="margin-top:0%;">
+													@Html.Partial("Partials/LotoVisitorSignInCard", new Shield.Ui.App.ViewModels.LotoAEManagementViewModel
+													{
+													Header = Model.Header,
+													Loto = Model.Loto,
+													SessionService = Model.SessionService,
+													Message = Model.SignInCardMessage
+													})
+												</div>
+											</div>
+										</div>
+									</div>
+
+								</div>
+								@Html.Partial("Partials/LotoSignOutCard", new Shield.Ui.App.ViewModels.LotoAEManagementViewModel
+								{
+								Header = Model.Header,
+								Loto = Model.Loto,
+								SessionService = Model.SessionService
+								})
+							</div>
+							<div id="info-card" class="card" style="margin-top:20px">
+								<div id="loto-job-info-wrapper" class="card-body">
+									@if (!isLotoFromDiscrete)
+									{
+										@Html.Hidden("Site", Model.Header.Aircraft.Site)
+										@await Html.PartialAsync("Partials/LotoJobInfoPartial", Model.Loto)
+									}
+									else
+									{
+										@Html.Hidden("Id", Model.Loto.Id)
+										@Html.Hidden("AssignedPAEBemsId", Model.Loto.AssignedPAE == null ? (int?)null : Model.Loto.AssignedPAE.BemsId)
+										@await Html.PartialAsync("Partials/LotoWithDiscreteJobInfoPartial", Model.Loto.Discrete)
+									}
+								</div>
+							</div>
+
+							@if (isLotoFromDiscrete || Model.Loto.HasValidJobInfoData)
+							{
+								<div id="isolations-wrapper" style="margin-top:10px">
+									<div>
+										<ul class="nav" style="margin-bottom:3px;">
+											<li class="loto-tab" style=""><a id="isolations-tab" data-toggle="tab" data_id="1" class="nav-link loto-tab-link active" href="#isolations">Isolations</a></li>
+											<li class="loto-tab" style="width:12rem;"><a data-toggle="tab" class="nav-link loto-tab-link" data_id="2" href="#loto-history">LOTO History Log</a></li>
+										</ul>
+										<div class="card">
+											<div class="card-body">
+												<div class="tab-content loto-tab-content">
+													<div id="isolations" class="tab-pane active fade in show">
+														@if (isLotoFromDiscrete && Model.Loto.IsNeedsLockOut())
+														{
+															@await Html.PartialAsync("Partials/LotoWithDiscreteIsolationsPartial", Model.Loto)
+														}
+														else if (Model.Loto.IsNeedsLockOut())
+														{
+															@await Html.PartialAsync("Partials/LotoIsolationsPartial", Model.Loto)
+														}
+														else if (Model.Loto.IsActive() || Model.Loto.IsTransfer())
+														{
+															@await Html.PartialAsync("Partials/ActiveLotoIsolationsPartial", Model.Loto)
+														}
+														else if (Model.Loto.IsComplete())
+														{
+															@await Html.PartialAsync("Partials/CompleteLotoIsolationsPartial", Model.Loto)
+														}
+													</div>
+													<div id="loto-history" class="tab-pane fade">
+														<div id="lotoHistoryTable">
+															@await Html.PartialAsync("Partials/LotoHistoryTable", Model.LotoTransactions)
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+
+										<br />
+
+									</div>
+								</div>
+							}
+							<div>
+								<div class="row">
+									<div class="col-md-5">
+										<a id="back-button" class="btn btn-secondary-gray btn-rounded float-left"
+										   asp-controller="Loto" asp-action="ViewLotos"
+										   asp-route-site="@Model.Header.Aircraft.Site"
+										   asp-route-program="@Model.Header.Aircraft.Model"
+										   asp-route-lineNumber="@Model.Header.Aircraft.LineNumber"
+										   style="position: relative; margin-left:0">
+											<i class="fa fa-arrow-left prefix" style="padding-right:5px"></i>
+											Back
+										</a>
+									</div>
+									<div class="col-md-2 text-center">
+										<button id="save-for-later-link" onclick="printWindow()" class="btn btn-link" style="color: #0275d8 !important; text-decoration: underline; text-transform: none !important; font-size:.85rem">Print</button>
+									</div>
+
+									<div class="col-md-5">
+										@if (Model.Loto.Status.Description == Shield.Common.Constants.Status.NEEDS_LOCKOUT_DESCRIPTION)
+										{
+
+											<div class="float-right" id="LockoutButtonBlock">
+												<button type="submit" @Html.Raw(needsLockoutDisabledAttr) aria-label="Lockout" id="lockout-button" class="btn btn-primary btn-rounded float-right" onclick="getLockOutModal(@Model.Loto.ConflictIsolations.Count);"><i class="fa fa-lock prefix"></i> Lockout</button>
+											</div>
+										}
+
+										@* Lockout modal *@
+										<div class="modal fade" id="lockoutModal" tabindex="-1" role="dialog" aria-hidden="true">
+											<div class="modal-dialog modal-md" role="document">
+												<div class="modal-content">
+													<div class="modal-header warning-color-dark darken-1 white-text">
+														<h3 class="modal-title">Lockout Aircraft?</h3>
+														<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+															<span aria-hidden="true">&times;</span>
+														</button>
+													</div>
+													<div class="modal-body" id="lockout-modal-body">
+														<p>
+															Press 'LOCKOUT' if the Tags/Locks have already been installed and the <strong>aircraft is safe to work on</strong>.
+														</p>
+														<p>
+															Press 'CANCEL' if the Tags/Locks still need to be installed. Select the 'Lockout' button again when they have been installed and the aircraft is locked out and safe to work on.
+														</p>
+													</div>
+													<div id="confirming-author-modal-actions" class="modal-footer">
+														<button id="cancel-lockout" type="button" class="btn btn-rounded btn-secondary-gray black-text float-right" data-dismiss="modal">Cancel</button>
+														<form asp-controller="Loto" asp-action="Lockout" asp-route-lotoId="@Model.Loto.Id" asp-route-lineNumber="@Model.Loto.LineNumber" asp-route-program="@Model.Loto.Program" asp-route-site="@Model.Header.Aircraft.Site">
+															<button type="submit" aria-label="Lockout" id="lockout-modal-button" class="btn btn-rounded btn-warning black-text float-right"><i class="fa fa-lock prefix"></i>LOCKOUT</button>
+														</form>
+													</div>
+												</div>
+											</div>
+										</div>
+
+										@* Conflict Isolation modal *@
+										<div class="modal fade" id="conflictLockoutModal" tabindex="-1" role="dialog" aria-hidden="true">
+											<div class="modal-dialog modal-md" role="document">
+												<div class="modal-content">
+													<div class="modal-header info-color-dark darken-1 white-text">
+														<h3 class="modal-title">Lockout Conflict</h3>
+														<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+															<span aria-hidden="true">&times;</span>
+														</button>
+													</div>
+													<div class="modal-body" id="lockout-modal-body">
+														@{
+															var conflictedLotoName = string.Empty; int rowCount = 1;
+														}
+
+														@foreach (var iso in Model.Loto.ConflictIsolations)
+														{
+
+															if (!conflictedLotoName.Equals(iso.ConflictLotoName))
+															{
+																<p>The LOTO for work package <strong>@Model.Loto.WorkPackage</strong> cannot be applied because the LOTO for work package <strong>@iso.ConflictLotoName</strong> has conflicting component isolation states.</p>
+																<br />
+																<br />
+																<label>Conflicts with :</label>
+																<table class="table table-small" id="active-loto-isolation-table">
+																	<thead>
+																		<tr>
+																			<th width="10%">ID</th>
+																			<th width="25%" class="">Name</th>
+																			<th width="10%" class="">Set to</th>
+																		</tr>
+																	</thead>
+																	<tbody>
+																		@foreach (var conflt in Model.Loto.ConflictIsolations)
+																		{
+																			if (conflt.ConflictLotoId == rowCount)
+																			{
+																				<tr>
+																					<td>@conflt.CircuitId</td>
+																					<td>@conflt.CircuitName</td>
+																					<td>@conflt.State</td>
+																				</tr>
+																			}
+																		}
+																	</tbody>
+																</table>
+
+																conflictedLotoName = @iso.ConflictLotoName;
+																rowCount = rowCount + 1;
+															}
+
+														}
+													</div>
+
+													<div id="confirming-author-modal-actions" class="modal-footer">
+														<button id="cancel-lockout" type="button" class="btn btn-rounded btn-secondary-gray black-text float-right" data-dismiss="modal">OK</button>
+													</div>
+												</div>
+											</div>
+										</div>
+
+										<div class="modal fade" id="conflictIsolationsModal" tabindex="-1" role="dialog" aria-hidden="true">
+										</div>
+
+										@if (Model.Loto.IsActive())
+										{
+											<div class="float-right">
+												<button type="button" aria-label="Transfer" id="transfer-button" class="btn btn-primary btn-rounded"
+												@disableTransferAttr onclick="showTransferDialog()">
+													Transfer
+													<img width="25" height="25" class="img-responsive" id="sign-in-loader" style="display: none;" alt="Loading..." src="/images/loading.gif">
+												</button>
+											</div>
+											<div class="float-right">
+												<button id="complete-button"
+														class="btn btn-primary btn-rounded"
+														type="button"
+														data-target="#completeModal"
+														data-toggle="modal"
+												@disableCompleteAttr
+												@Html.Raw(completeButtonDisabledAttr)>
+													Remove Isolations & Complete
+												</button>
+											</div>
+										}
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+
+<div class="modal fade" id="completeModal" role="dialog">
+	<div class="modal-dialog modal-md" role="document">
+		<div class="modal-content">
+			<div class="modal-header modal-header-primary white-text">
+				<h3 class="modal-title">Complete LOTO</h3>
+			</div>
+			<div class="modal-body">
+				<div style="margin-top:1.5rem; margin-bottom:2rem;">
+					Are you sure you want to mark this LOTO as complete?
+				</div>
+				<a href="@Url.Action("UninstallIsolationsAndCompleteLoto", "Loto", new { lotoId = Model.Loto.Id, site = Model.Header.Aircraft.Site })" aria-label="Complete" id="confirm-complete-button" class="btn btn-primary btn-rounded float-right">
+					Remove Isolations & Complete
+				</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Prevent an AE from signing into multiple LOTOs modal -->
+<div class="modal fade" id="cannotSignIntoLotoModal" tabindex="-1" role="dialog" aria-labelledby="CannotSignIntoLoto" aria-hidden="true">
+	<div class="modal-dialog modal-md" role="document">
+		<div class="modal-content">
+			<div class="modal-header red darken-1 white-text">
+				<h4 class="select-line-modal-title">Cannot Sign-in AE</h4>
+				<button type="button" class="close text-white select-close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body" id="cannotSignIntoLotoModalBody" style="padding: 0rem 3.5rem 0 3.5rem; margin-top:1.2rem">
+				<div id="already-signed-in-message">
+				</div>
+			</div>
+
+			<div class="modal-footer" style="margin-top:4rem;">
+				<div id="signOutAction" style="float:right" class="row float-right">
+					<button type="button" class="btn btn-primary btn-rounded float-right" data-dismiss="modal" aria-label="Close">
+						Dismiss
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Sign Out AE as Manager Modal -->
+@if (currentUser.IsManager)
+{
+	<div class="modal fade" id="signOutAEManagerModal" tabindex="-1" role="dialog" aria-labelledby="SignOutAEManagerModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-md" role="document">
+			<div class="modal-content">
+				<div class="modal-header blue darken-1 white-text">
+					<h3 class="modal-title">Sign Out AE</h3>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body" id="checkOutPersonModalBody">
+					<div id="signOutMessage">
+						Are you sure you want to sign out this AE from Line @Model.Loto.LineNumber?
+					</div>
+					<hr />
+					<div id="signOutAction" style="float:right" class="row float-right">
+						<button type="button" class="btn btn-secondary-gray btn-rounded black-text float-right" data-dismiss="modal" aria-label="Close">
+							<i class="fa fa-times prefix cancel-icon"></i> Cancel
+						</button>
+						<a id="sign-out-ae-button-mgr" class="btn btn-primary btn-rounded float-right">
+							<i class="fa fa-sign-in prefix fa-1-rem" style="padding-right:5px"></i>
+							Sign Out
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+@*Popup for Tranfer comments*@
+<div class="modal fade" id="transferCommentModal" tabindex="-1" role="dialog" aria-labelledby="TransferCommentPopupLabel" aria-hidden="true">
+	<div class="modal-dialog modal-md" role="document">
+		<div class="modal-content">
+			<div class="modal-header blue darken-1 white-text">
+				<h4 class="modal-title">Transfer LOTO</h4>
+				<button type="button" class="close text-white select-close" data-dismiss="modal" aria-label="Close" onclick="clearTransferComment()">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<form method="post" id="transfer-loto-form"
+				  asp-controller="Loto"
+				  asp-action="Transfer"
+				  asp-route-lotoId="@Model.Loto.Id"
+				  asp-route-lineNumber="@Model.Loto.LineNumber"
+				  asp-route-program="@Model.Loto.Program"
+				  asp-route-site="@Model.Header.Aircraft.Site">
+				<div id="TransferPopupModalBody">
+					<div class="modal-body" style="padding: 0rem 3.5rem 0 3.5rem; margin-top:1.2rem">
+						<div id="transfer-comment-area">
+							<input type="text" style="border-color:black" oninput="validateTransferComments()" class="form-control"
+								   id="transfer-comments" name="comment" placeholder="Enter the reason for Transfer..." />
+						</div>
+					</div>
+					<div class="modal-footer" id="transfer-cancel-button">
+						<button type="button" class="btn btn-secondary-gray btn-rounded black-text float-left" value="Cancel" onclick="clearTransferComment()" data-dismiss="modal">
+							<i class="fa fa-times prefix" style="padding-right:.4rem; color:black !important; margin-top:-.19rem;"></i>
+							Cancel
+						</button>
+						<button type="submit" aria-label="Transfer" id="transfer-button-popup" class="btn btn-primary btn-rounded" disabled>
+							Confirm
+							<img width="25" height="25" class="img-responsive" id="overrideTraining-sign-in-loader" style="display: none;" alt="Loading..." src="/images/loading.gif">
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="ConfirmIdentityForLotoSignIn" class="card modal fade confirmIdentityForLotoSignIn" role="dialog" tabindex="-1" style="overflow-y:scroll; display: none; position: absolute; margin:auto; top:90%; width:50%">
+	<div class="modal-header blue darken-1 white-text">
+		<h4 class="modal-title">IDENTITY ACKNOWLEDGEMENT</h4><br>
+	</div>
+	<div>
+		<div class="modal-body">
+			<div id="acknowledgeBemsForLotoText" class="acknowledgeBemsText">I acknowledge that the BEMSID <a id="acknowledgedBEMSForLotoSignIn" href="#" class="insite-hovercard"></a> is correct.</div>
+			<br />
+			<div id="profileDetailsForLotoSignIn">
+			</div>
+			<div class="acknowledgeBemsText">
+				LOTO Sign-in details are correct. The LOTO is applied per the HECP and work has been coordinated with the GC.
+			</div>
+			<br />
+			<span class="modal-footer">
+				<button onclick="closeIdentityPopupForLotoSignIn()" type="button" class="btn btn-secondary-gray btn-rounded black-text float-right" data-dismiss="modal" aria-label="Close">
+					<i class="fa fa-times prefix cancel-icon" style="color:black !important;"></i> Cancel
+				</button>
+				<button id="signInAE" onclick="signInAE(@Model.Loto.Id, document.getElementById('bemsIdOrBadge-input').value.trim(), false)" type="button" class="btn btn-primary btn-rounded" style="margin:0;font-size:0.8rem;"><i class="fa fa-check-circle prefix right-space-xsm"></i>Acknowledge</button>
+			</span>
+		</div>
+	</div>
+</div>
+
+<style>
+	body, html {
+		margin-top: 0%;
+		display: block;
+		height: 100%;
+	}
+</style>

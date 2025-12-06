@@ -1,0 +1,89 @@
+@using Shield.Ui.App.ViewModels;
+@using Shield.Ui.App.Authorization;
+
+@model Shield.Ui.App.ViewModels.LotoAEManagementViewModel
+
+@{
+    var currentUser = Model.SessionService.GetUserFromSession(Context);
+}
+
+@if (Model.Loto.AssignedPAE == null)
+{
+    <p class="text-center">
+        <b>
+            No PAE Assigned
+        </b>
+    </p>
+}
+else
+{
+    <div style="text-align:left; position: relative;">
+        <div>
+            Assigned PAE:
+        </div>
+        <div>
+            <span style="padding-right:.5rem">
+                <i class="fa fa-check-circle text-lg-left green-text prefix" style="font-size:2.5rem;"></i>
+            </span>
+            <span style="position: absolute; top: 50%;">
+                @Model.Loto.AssignedPAE.DisplayName
+            </span>
+        </div>
+    </div>
+}
+
+@if (currentUser.BemsId != Model.Loto.AssignedPAEBemsId && PermissionHandler.HasPermission(currentUser.Permissions, Shield.Common.Constants.Permission.CREATE_LOTO))
+{
+    if (Model.Loto.IsComplete())
+    {
+        <a id="claim-as-pae-button"
+           class="btn btn-dark btn-rounded disabled"
+           role="button" aria-disabled="true"
+           style="align-self: center;">
+            CLAIM AS PAE
+        </a>
+    }
+    else{
+        <a id="claim-as-pae-button"
+           class="btn btn-primary btn-rounded" onclick="AssignPAE(@Model.Loto.Id,@currentUser.BemsId, @Model.Header.GroupCoordinator.BemsId, false)"
+           style="align-self: center;">
+            CLAIM AS PAE<img width="25" height="25" class="img-responsive" id="sign-in-loader-pae" style="display: none;" alt="Loading..." src="/images/loading.gif">
+        </a>
+    }
+
+}
+
+<div class="" id="bemsIdOrBadge-input-section" style="margin-top:25%;">
+    @if (Model.Message == "" || Model.Message == null)
+    {
+        <div class="md-form">
+            <div class="input-group">
+                <label for="bemsIdOrBadge-input">Scan Badge or Type BEMSID</label>
+                <input id="bemsIdOrBadge-input" oninput="validateBoeingAESignInButton()" class="form-control" type="password" />
+            </div>
+        </div>
+    }
+    else
+    {
+        <div>
+            <p class="text-center">
+                @Model.Message
+            </p>
+        </div>
+    }
+    
+    
+    @if ((Model.Header.IsCurrentUserTheGC || currentUser.RoleId == 7 || currentUser.RoleId == 8) && Model.Loto.AssignedPAE != null 
+    && Model.Loto.Status.Description == Shield.Common.Constants.Status.ACTIVE_DESCRIPTION)
+    {
+    <button id="sign-in-button"
+            class="btn btn-primary btn-rounded boeing-loto-sign-in"
+            type="button"
+            style="width: 100%; margin-left: 0;"
+                onclick="showIdentityPopupForLotoSignIn(document.getElementById('bemsIdOrBadge-input').value.trim())" disabled>
+        <i class="fa fa-sign-in prefix" style="padding-right: 5px;"></i>
+        SIGN IN AE
+        <img width="25" height="25" class="img-responsive" id="sign-in-loader" style="display: none;" alt="Loading..." src="/images/loading.gif">
+        </button>
+    } 
+</div>

@@ -1,0 +1,132 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Shield.Ui.App.ViewModels
+@model Shield.Ui.App.ViewModels.ActiveIsolationViewModel
+
+@{
+    Layout = "~/Views/Shared/_BlankLayout.cshtml";
+    ViewData["Title"] = "Active Isolations";
+}
+
+<style>
+    table.dataTable thead th {
+        padding-left: 9px;
+    }
+</style>
+<div class="container-fluid card" style="padding:0;">
+    <div class="logbook-header card-header card-header-lg col-md-12" style="min-height: 95px;">
+        <div style="line-height:50px">
+            <h4 class="black-text float-left top-bottom-space-center">View All Isolations</h4>
+            <p class="float-right"><i>To print, use your browser's Print function</i></p>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (Model.DiscreteIsolations.Count > 0)
+        {
+            <h1>@Model.Model  - @Model.LineNumber</h1><br />
+            <h5 style="margin-bottom: 0%;"><u>Discrete HECP Isolations</u></h5>
+            <table class="table table-small" id="discrete-isolation-table">
+                <thead id="CheckInTableHeaders">
+                    <tr class="small">
+                        <th style="width:15%;">HECP Title</th>
+                        <th style="width:15%;">LOTO Title</th>
+                        <th style="width:15%;">Isolation</th>
+                        <th style="width:25%;">Name</th>
+                        <th style="width:15%;">Tag</th>
+                        <th style="width:10%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="active_isolations_table">
+                    @foreach (var discreteIsolation in Model.DiscreteIsolations)
+                    {
+                        <tr>
+                            <td>@discreteIsolation.DiscreteTitle</td>
+                            <td>@discreteIsolation.LotoTitle</td>
+                            <td>@discreteIsolation.LotoIsolationsDiscreteHecp.SystemCircuitId</td>
+                            <td>@discreteIsolation.LotoIsolationsDiscreteHecp.CircuitNomenclature</td>
+                            <td>@discreteIsolation.LotoIsolationsDiscreteHecp.Tag</td>
+                            <td><i class="fa fa-lock isolation-icon"></i></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            }
+            @if(Model.HecpIsolationTags.Count > 0){
+            <br /><br /><hr style="height:1px; background:#dee2e6;" /><br />
+            <h5 style="margin-bottom: 0%;"><u>HECP Isolations</u></h5>
+            <div class="row col-md-12" style="min-height: 95px;background-color:white; margin-top:25px;">
+                <div class="col-md-1">
+                    <label id="Id-label" for="Id-Title" class="grey-text font-weight-normal small">Id</label>
+                    <div class="md-form">
+                        <input value="" type="text" id="Id-Title" name="Id-Title" />
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <label id="Name-label" for="Name" class="grey-text font-weight-normal small">Name</label>
+                    <div class="md-form">
+                        <input type="text" id="Name" value="" name="Name" />
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <label id="Panel-label" for="Panel" class="grey-text font-weight-normal small">Panel/Tool</label>
+                    <div class="md-form">
+                        <input type="text" id="Panel" value="" name="Panel" />
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <label id="Location-label" for="Location" class="grey-text font-weight-normal small">Location</label>
+                    <div class="md-form">
+                        <input type="text" id="Location" value="" name="Location" />
+                    </div>
+                </div>
+                <button id="applyReportFilter" class="btn btn-primary btn-rounded float-right" onclick="FilterIsolations('@Model.Model', '@Model.LineNumber');" style="height: 50px;" type="submit">Apply Filters</button>
+                <button id="resetReportFilter" type="button" class="btn btn-primary btn-rounded float-right" onclick="resetIsolationsFilters('@Model.Model' , '@Model.LineNumber');" style="height: 50px;">Reset Filters</button>
+                <button id="btnExportToExcel" type="button" class="btn btn-primary btn-rounded float-right" onclick="exportIsolationsToExcel('@Model.Model' , '@Model.LineNumber');" style="height: 50px;">Export to Excel</button>
+            </div>
+            <table class="table table-small" id="hecp-isolation-table">
+                <thead id="CheckInTableHeaders">
+                    <tr class="small">
+                        <th style="width:20%;">HECP Title</th>
+                        <th style="width:15%;">LOTO Title</th>
+                        <th style="width:10%;">ID</th>
+                        <th style="width:15%;">Name</th>
+                        <th style="width:10%;">Panel/Tool</th>
+                        <th style="width:10%;">Location</th>
+                        <th style="width:10%;">Tag</th>
+                        <th style="width:5%;">Set to</th>
+                        <th style="width:10%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="active_isolations_table">
+                    @foreach (var hecpIsolationTag in Model.HecpIsolationTags)
+                    {
+                          <tr>
+                            <td>@Model.HecpTitleIsolationTag.FirstOrDefault(y=> y.Key ==hecpIsolationTag.HecpId).Value</td>
+                            <td>@Model.LotoTitleIsolationTag.FirstOrDefault(y=> y.Key ==hecpIsolationTag.LotoId).Value</td>
+                            <td>@hecpIsolationTag.CircuitId</td>
+                            <td>@hecpIsolationTag.CircuitName</td>
+                            <td>@hecpIsolationTag.CircuitPanel</td>
+                            <td>@hecpIsolationTag.CircuitLocation</td>
+                            <td>@hecpIsolationTag.Tag</td>
+                            <td>@hecpIsolationTag.State</td>
+                              <td><i class="fa fa-lock isolation-icon"></i></td>
+                          </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <h1>No Active Isolations.</h1>
+        }
+    </div>
+</div>
+
+<script>
+    window.onload = function () {
+        LoadHecpTable();
+    }
+</script>
+
+
+
+

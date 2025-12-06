@@ -1,0 +1,155 @@
+@using Microsoft.AspNetCore.Http
+@using Shield.Ui.App.Models.CheckInModels
+@using Shield.Ui.App.Models.CommonModels
+@using Shield.Ui.App.Models.DiscreteModels
+@using Shield.Ui.App.Models.LotoModels
+@using Newtonsoft.Json
+@using Shield.Ui.App.Authorization;
+
+@model Shield.Ui.App.ViewModels.LotoDashboardViewModel
+
+@{
+    ViewData["Title"] = "LOTO Logbook";
+}
+
+<!--Intro Section-->
+<section class="view intro-2 hm-stylish-strong">
+    <div class="full-bg-img">
+        <div class="container">
+            <div class="row top-bottom-space">
+                @await Html.PartialAsync("../Shared/Partials/LineCardPartial", Model.Header.Aircraft)
+                @await Html.PartialAsync("../Shared/Partials/GroupCoordinatorCardPartial", Model.Header)
+            </div>
+            <br />
+            <div id="loto-content" class="row card">
+                <div class="logbook-header card-header card-header-lg col-md-12" style="min-height: 95px;">
+                    <div style="line-height:50px">
+                        <h4 id="lotoCardTitle" class="black-text float-left top-bottom-space-center">LOTO Logbook - <i class="fa fa-building"></i>&nbsp;@Model.Header.Aircraft.Site <i class="fa fa-plane"></i>&nbsp;@Model.Header.Aircraft.Model <i class="fa fa-hashtag"></i>&nbsp;@Model.Header.Aircraft.LineNumber</h4>
+                        <div class="float-right">
+                            <a class="btn btn-rounded btn-secondary-gray black-text" target="_blank" asp-action="GetAllInProgressLotosWithIsolations"
+                               asp-controller="Loto" asp-route-program="@Model.Header.Aircraft.Model"
+                               asp-route-lineNumber="@Model.Header.Aircraft.LineNumber">View All Isolations</a>
+                            @{
+                                try
+                                {
+                                    var currentUser = Model.SessionService.GetUserFromSession(Context);
+                                    @if (PermissionHandler.HasPermission(currentUser.Permissions, Shield.Common.Constants.Permission.CREATE_LOTO) && Model.Header.GroupCoordinator.BemsId != 0)
+                                    {
+                                        <button id="create-loto-button" class="btn btn-rounded btn-primary float-right" data-toggle="modal" data-target="#CreateLotoModal" onclick="LoadCreateLotoModal();">
+                                            <i class="fa fa-plus prefix" style="padding-right:10px"></i>
+                                            Create Loto
+                                        </button>
+                                    }
+                                }
+                                catch (Exception e) { }
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body outer-card-body" style="width: 100%;">
+                    <!--Count goes here-->
+                    <div id="recent-loto-count-text" class="grey-text container">
+                        @if (Model.ThreeMostRecentlyEditedLotoViewModels.Count == 1)
+                        {
+                            <p><span style="font-size:1.3rem">@Model.ThreeMostRecentlyEditedLotoViewModels.Count</span> most recently created or updated LOTO for Line @Model.Header.Aircraft.LineNumber</p>
+                        }
+                        else
+                        {
+                            <p><span style="font-size:1.3rem">@Model.ThreeMostRecentlyEditedLotoViewModels.Count</span> most recently created or updated LOTOs for Line @Model.Header.Aircraft.LineNumber</p>
+                        }
+                    </div>
+
+                    <div id="recent-lotos-grid">
+                        @await Html.PartialAsync("Partials/LotoGridPartial", Model.ThreeMostRecentlyEditedLotoViewModels)
+                    </div>
+                    <hr />
+                    <div class="row">
+                        <div class="col-md-7">
+                            <div id="loto-count-text" class="grey-text container vertical-align-content">
+                                @if (Model.ListOfLotoViewModels.Count == 1)
+                                {
+                                    <p><span style="font-size:1.3rem">@Model.ListOfLotoViewModels.Count</span> other LOTO for Line @Model.Header.Aircraft.LineNumber</p>
+                                }
+                                else
+                                {
+                                    <p><span style="font-size:1.3rem">@Model.ListOfLotoViewModels.Count</span> other LOTOs for Line @Model.Header.Aircraft.LineNumber</p>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <label id="sort-by-header" class="select-line-label blue-text font-weight-normal small">
+                                Sort By <img id="sort-by-loader" src="~/images/loading.gif" class="img-responsive" alt="Loading..." width="25" height="25" style="display:none;" />
+                            </label>
+                            <div class="md-form">
+                                <div class="select">
+                                    <select id="sort-select" class="custom-select-shield w-100" name="sortBy" onchange="SortLotoTiles('Loto', 'ViewLotos', '@Model.Header.Aircraft.Site', '@Model.Header.Aircraft.Model', '@Model.Header.Aircraft.LineNumber');">
+                                        <option id="option-site-needs-lockout" class="sort-by-option" value="@SortBy.NEEDSLOCKOUT">
+                                            Needs Lockout
+                                        </option>
+                                        <option id="option-site-needs-active" class="sort-by-option" value="@SortBy.ACTIVE">
+                                            Active
+                                        </option>
+                                        <option id="option-site-completed" class="sort-by-option" value="@SortBy.COMPLETED">
+                                            Completed
+                                        </option>
+                                        <option id="option-site-transferred" class="sort-by-option" value="@SortBy.TRANSFERRED">
+                                            Transferred
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="additional-lotos-grid" class="table-container">
+                        @await Html.PartialAsync("Partials/LotoGridPartial", Model.ListOfLotoViewModels)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="CreateLotoModal" tabindex="-1" role="dialog" aria-labelledby="CreateLotoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header blue darken-1 white-text">
+                <h4 class="modal-title">Create a new LOTO for Line @Model.Header.Aircraft.LineNumber</h4>
+                <button type="button" class="close text-white select-close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <form id="CreateLotoForm" name="CreateLotoForm" asp-controller="Loto" asp-action="CreateLoto" onsubmit="return validateCreateLotoForm();">
+                <input type="hidden" class="form-control" name="lineNumber" asp-for="@Model.Header.Aircraft.LineNumber" />
+                <input type="hidden" class="form-control" name="site" asp-for="@Model.Header.Aircraft.Site" />
+                <input type="hidden" class="form-control" name="AssignedGroupCoordinatorBems" asp-for="@Model.Header.GroupCoordinator.BemsId" />
+                <input type="hidden" class="form-control" name="model" asp-for="@Model.Header.Aircraft.Model">
+                <input type="hidden" class="form-control" name="assignedGC" asp-for="@Model.Header.Aircraft.AssignedGroupCoordinatorBems">
+ 
+                <div id="createLotoModalBody">
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script type="text/javascript">
+        function LoadCreateLotoModal(){
+            $.ajax({
+                //Sending Program data in order to fetch Minor model data
+                url: '@Url.Action("CreateLotoPartial","Loto", new{program = Model.Header.Aircraft.Model})',
+                type: 'GET',
+                dataType: 'html',
+                success: function(data){
+                    $('#createLotoModalBody').html(data);
+                },
+                error: function(data){
+                    console.log(data);
+                }
+            });
+        }
+    </script>
+}

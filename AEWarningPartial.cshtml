@@ -1,6 +1,6 @@
 @model Shield.Ui.App.ViewModels.AssignedAEViewModel
 
-<div class="card" style="padding:1.5rem 1rem 1.5rem 1rem">
+<div class="card" style="padding:1.5rem 1rem 1.5rem 1rem; display:none;" id="ae-warning-section">
     <h3 style="border-bottom:2px solid #eceeef; padding-bottom: 0.75rem; margin-bottom: 2.25rem;">Warning</h3>
 
     <p>User @Model.AssignedAE?.DisplayName (@Model.AssignedAE?.BemsId) is already assigned as AE in this LOTO @Model.LotoId.</p>
