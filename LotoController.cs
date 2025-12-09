@@ -775,67 +775,6 @@ namespace Shield.Ui.App.Controllers
             return PartialView("Partials/LotoOverridePartial", vm);
         }
 
-         [HttpPost]
-        [Authorize(Policy = Constants.AUTHENTICATED_USER)]
-        public async Task<ActionResult> AssignAE(int lotoId, string bemsOrBadge, bool overrideTraining, string reasonToOverride)
-        {
-            ActionResult response;
-
-            try
-            {
-                HTTPResponseWrapper<User> user = await GetUserFromBemsOrBadge(bemsOrBadge);
-
-                if (user.Data.BemsId != 0)
-                {
-                    User currentUser = _sessionService.GetUserFromSession(HttpContext);
-                    if (string.IsNullOrWhiteSpace(reasonToOverride))
-                    {
-                        reasonToOverride = string.Empty;
-                    }
-
-                    AssignedAE aeToAssign = new AssignedAE
-                    {
-                        AEName = user.Data.GetDisplayName(),
-                        AEBemsId = user.Data.BemsId,
-                        LotoId = lotoId
-                    };
-
-                    HTTPResponseWrapper<AssignedAE> result = await _lotoService.AssignAE(aeToAssign, overrideTraining, currentUser.DisplayName, currentUser.BemsId, reasonToOverride);
-                    string json = JsonConvert.SerializeObject(result, new JsonSerializerSettings
-                    {
-                        ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                        PreserveReferencesHandling = PreserveReferencesHandling.None
-                    });
-                    return Content(json, "application/json");
-                }
-                else
-                {
-                    response = Ok(new HTTPResponseWrapper<AssignedAE>
-                    {
-                        Status = Shield.Common.Constants.ShieldHttpWrapper.Status.FAILED,
-                        Reason = Shield.Common.Constants.ShieldHttpWrapper.Reason.INVALID_USER,
-                        Message = user.Message,
-                        Data = new AssignedAE()
-                    });
-                }
-            }
-            catch (Exception e)
-            {
-                Console.Error.WriteLine(e.Message);
-                response = Ok(new HTTPResponseWrapper<AssignedAE>
-                {
-                    Status = Shield.Common.Constants.ShieldHttpWrapper.Status.FAILED,
-                    Reason = Shield.Common.Constants.ShieldHttpWrapper.Reason.EXCEPTION_OCCURRED,
-                    Message = "Unable to sign in user as AE.",
-                    Data = new AssignedAE()
-                });
-            }
-
-            return response;
-        }
-
-
         [HttpPost]
         [Authorize(Policy = Constants.AUTHENTICATED_USER)]
         public async Task<ActionResult> AssignAE(int lotoId, string bemsOrBadge, bool overrideTraining, string reasonToOverride)
@@ -860,6 +799,18 @@ namespace Shield.Ui.App.Controllers
                         AEBemsId = user.Data.BemsId,
                         LotoId = lotoId
                     };
+
+                    var lotoDetail = await _lotoService.GetLotoDetail(lotoId);
+                    bool isAlreadySignedIn = lotoDetail?.ActiveAEs != null && lotoDetail.ActiveAEs.Any(ae => ae.AEBemsId == user.Data.BemsId);
+                    if(isAlreadySignedIn)
+                    {
+                        return Ok(new HTTPResponseWrapper<AssignedAE>
+                        {
+                            Status = Shield.Common.Constants.ShieldHttpWrapper.Status.NOT_MODIFIED,
+                            Reason = Shield.Common.Constants.ShieldHttpWrapper.Reason.ALREADY_EXISTS,
+                            Data = aeToAssign
+                        });
+                    }
 
                     HTTPResponseWrapper<AssignedAE> result = await _lotoService.AssignAE(aeToAssign, overrideTraining, currentUser.DisplayName, currentUser.BemsId, reasonToOverride);
                     string json = JsonConvert.SerializeObject(result, new JsonSerializerSettings

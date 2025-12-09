@@ -505,8 +505,10 @@ function signInAE(id, bemsOrBadge, overrideTraining) {
                     });
 
                 } else if (result.reason === HTTP.REASON.ALREADY_EXISTS) {
-                    $("#already-signed-in-message").html(safeResponseFilter(result.message));
-                    $("#cannotSignIntoLotoModal").modal("show");
+                    var warning = "User " + result.data.aeName + "(" + result.data.aeBemsId + ") is already assigned as AE in the LOTO " + result.data.lotoId + ".";
+                    $('#ae-warning-partial p').text(warning);
+                    $('#sign-in').hide();
+                    $('#ae-warning-partial').show();
                 } else {
                     toastr.error(result.message, "AE Not Signed In", TOAST_OPTIONS);
                 }
@@ -570,12 +572,10 @@ function OverrideTrainingAE(lotoId, overrideTraining) {
             overrideTraining: overrideTraining,
             reasonToOverride: overrideReason
         },
-        dataType: 'text',
+        dataType: 'json',
         cache: false,
-        success: function (response) {
-            try {
-                let result = JSON.parse(response);
-                if (result.status === HTTP.STATUS.SUCCESS) {
+        success: function (result) {
+            if (result.status === HTTP.STATUS.SUCCESS) {
                 $.ajax({
                     url: "/Loto/LotoDetail?id=" + lotoId,
                     cache: false,
@@ -584,9 +584,13 @@ function OverrideTrainingAE(lotoId, overrideTraining) {
                         toastr.success(result.message, "AE Signed In", TOAST_OPTIONS_SHORT_TIMEOUT);
                     }
                 });
-            }
-            } catch (e) {
-                $('body').html(response);
+            } else if (result.status === HTTP.STATUS.NOT_MODIFIED && result.reason === HTTP.REASON.ALREADY_EXISTS) {
+                var warning = "User " + result.data.aeName + "(" + result.data.aeBemsId + ") is already assigned as AE in the LOTO " + result.data.lotoId + ".";
+                $('#ae-warning-partial p').text(warning);
+                $('#sign-in').hide();
+                $('#ae-warning-partial').show();
+            } else {
+                toastr.error(result.message, "AE Not Signed In", TOAST_OPTIONS);
             }
         },
         error: function () {
@@ -600,6 +604,11 @@ function OverrideTrainingAE(lotoId, overrideTraining) {
             $visitorSignInLoad.hide();
         },
     })
+}
+
+function onReturn(){
+    $('#ae-warning-partial').hide();
+    $('#sign-in').show();
 }
 
 function signInVisitorLotoModal(id, name, overrideTraining) {

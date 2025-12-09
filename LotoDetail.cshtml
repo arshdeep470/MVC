@@ -181,6 +181,13 @@
 													})
 												</div>
 											</div>
+											<div id="ae-warning-partial" style="display:none;">
+                                                        @Html.Partial("Partials/AEWarningPartial", new Shield.Ui.App.ViewModels.AssignedAEViewModel
+                                                        {
+                                                        AssignedAE = Model.Loto.AssignedAEs?.FirstOrDefault()?.AssignedAE,
+                                                        LotoId = Model.Loto.Id
+                                                        })
+                                            </div>
 											<div class="card tab-pane fade" id="sign-in-visitor" role="tabpanel" aria-labelledby="sign-in-visitor-tab" style="border-top-left-radius: 0;">
 												<div id="visitor-sign-in-partial" class="card-body d-flex flex-column" style="margin-top:0%;">
 													@Html.Partial("Partials/LotoVisitorSignInCard", new Shield.Ui.App.ViewModels.LotoAEManagementViewModel
