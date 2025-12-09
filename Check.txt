@@ -1,0 +1,247 @@
+[HttpPost]
+[Authorize(Policy = Constants.AUTHENTICATED_USER)]
+public async Task<ActionResult> GetAEWarningPartial(int lotoId, int bemsId, string aeName)
+{
+    var viewModel = new Shield.Ui.App.ViewModels.AssignedAEViewModel
+    {
+        AssignedAE = new AssignedAE 
+        { 
+            BemsId = bemsId, 
+            DisplayName = aeName 
+        },
+        LotoId = lotoId
+    };
+    return PartialView("Partials/AEWarningPartial", viewModel);
+}
+
+
+
+@model Shield.Ui.App.ViewModels.AssignedAEViewModel
+<div class="card" style="padding:1.5rem 1rem 1.5rem 1rem;">
+    <h3 style="border-bottom:2px solid #eceeef; padding-bottom: 0.75rem; margin-bottom: 2.25rem;">Warning</h3>
+    <p>User @Model.AssignedAE?.DisplayName (@Model.AssignedAE?.BemsId) is already assigned as AE in this LOTO @Model.LotoId.</p>
+    <hr />
+    <div class="text-center">
+        <button type="button" onclick="onReturn()" class="btn btn-secondary-gray btn-rounded">
+            <i class="fa fa-arrow-left prefix" style="margin-right:0.5rem;"></i>Return
+        </button>
+    </div>
+</div>
+
+
+// Common function to handle AE warning partial
+function showAEWarningPartial(lotoId, bemsId, aeName) {
+    $.ajax({
+        url: '/Loto/GetAEWarningPartial',
+        type: 'POST',
+        data: {
+            lotoId: lotoId,
+            bemsId: bemsId,
+            aeName: aeName
+        },
+        dataType: 'html',
+        success: function (html) {
+            $('#ae-warning-partial').html(html);
+            $('#sign-in-partial').hide();
+            $('#ae-warning-partial').show();
+        },
+        error: function () {
+            toastr.error("Unable to load warning message.", "Error", TOAST_OPTIONS);
+        }
+    });
+}
+
+function signInAE(id, bemsOrBadge, overrideTraining) {
+    $('#overrideTrainingLotoModal').hide();
+    closeIdentityPopupForLotoSignIn();
+
+    let $signInLoader = $('#sign-in-loader');
+    $signInLoader.css('display', 'inline');
+
+    let overrideLoader = $('#override-sign-in-loader');
+    overrideLoader.css('display', 'inline');
+
+    $.ajax({
+        url: "/Loto/AssignAE",
+        type: 'POST',
+        data: {
+            lotoId: id,
+            bemsOrBadge: bemsOrBadge,
+            overrideTraining: overrideTraining
+        },
+        dataType: 'json',
+        cache: false,
+        success: function (result) {
+            if (result.status === HTTP.STATUS.SUCCESS) {
+                $.ajax({
+                    url: "/Loto/LotoDetail?id=" + id,
+                    cache: false,
+                    success: function (html) {
+                        $('body').html(safeResponseFilter(html));
+                        toastr.success(safeResponseFilter(result.message), "AE Signed In", TOAST_OPTIONS_SHORT_TIMEOUT);
+                    }
+                });
+            } else if (result.status === HTTP.STATUS.NOT_MODIFIED) {
+                if (result.reason === HTTP.REASON.TRAINING) {
+                    let userTrainingData = result.data.userTrainingData;
+                    $.ajax({
+                        url: '/Loto/GetTrainingStatus?id=' + id + '&bemsId=' + result.data.aeBemsId + '&message=' + result.message,
+                        type: 'POST',
+                        data: JSON.stringify(userTrainingData),
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'html',
+                        success: function (response) {
+                            $('#overrideTrainingLotoModal').html(response);
+                            $('#OverrideTrainingLotoConfirmation').append(safeResponseFilter('<br /><br /> Shield attempted to communicate with My Learning and was unable to provide confirmation of required training (77517 and 84757). Please document a reason for an override or cancel the sign in.'));
+                            $('#overrideTrainingBemsID').val(bemsOrBadge);
+                            $('#override-employee-training').show();
+                            $('#OverrideTrainingSubmit').show();
+                            $('#override-visitor-training').hide();
+                            $('#OverrideTrainingVisitorSubmit').hide();
+                            $('#OverrideTrainingPAESubmit').hide();
+                            $('#overrideTrainingLotoModal').modal('show');
+                        }
+                    });
+                } else if (result.reason === HTTP.REASON.ALREADY_EXISTS) {
+                    showAEWarningPartial(result.data.lotoId, result.data.aeBemsId, result.data.aeName);
+                } else {
+                    toastr.error(result.message, "AE Not Signed In", TOAST_OPTIONS);
+                }
+            } else {
+                if (result.reason === HTTP.REASON.TRAINING) {
+                    $('#sign-in-partial').hide(200);
+                    $('#sign-in-partial').html('');
+
+                    $.ajax({
+                        url: '/Loto/OverrideTrainingPartial',
+                        type: 'POST',
+                        data: {
+                            id: result.data.lotoId,
+                            bemsId: result.data.aeBemsId,
+                            message: result.message,
+                            aeName: result.AEName,
+                            isTrainingDown: true
+                        },
+                        dataType: 'html',
+                        async: true,
+                        success: function (result) {
+                            $('#sign-in-partial').html(result);
+                            $('#sign-in-partial').show(200);
+                        }
+                    });
+                } else {
+                    $('#overrideTrainingLotoModal').hide();
+                    toastr.error(result.message, "AE Not Signed In", TOAST_OPTIONS);
+                }
+            }
+        },
+        error: function (xhr) {
+            $('#overrideTrainingLotoModal').hide();
+            toastr.error("Unable to connect to LOTO service.", "Connection Error", TOAST_OPTIONS);
+        },
+        complete: function () {
+            $signInLoader.hide();
+            overrideLoader.hide();
+        },
+        async: true
+    });
+}
+
+function OverrideTrainingAE(lotoId, overrideTraining) {
+    let $visitorSignInLoad = $('#overrideTraining-sign-in-loader');
+    $visitorSignInLoad.css('display', 'inline');
+
+    let bemsOrBadge = $('#overrideTrainingBemsID').val();
+    bemsOrBadge = $.trim(bemsOrBadge);
+
+    let overrideReason = $('#loto-override-training-comments-dropdown option:selected').text();
+    if (overrideReason == "Other") {
+        overrideReason = $('#loto-override-training-comments').val();
+    }
+
+    $.ajax({
+        url: "/Loto/AssignAE",
+        type: 'POST',
+        data: {
+            lotoId: lotoId,
+            bemsOrBadge: bemsOrBadge,
+            overrideTraining: overrideTraining,
+            reasonToOverride: overrideReason
+        },
+        dataType: 'json',
+        cache: false,
+        success: function (result) {
+            if (result.status === HTTP.STATUS.SUCCESS) {
+                $.ajax({
+                    url: "/Loto/LotoDetail?id=" + lotoId,
+                    cache: false,
+                    success: function (html) {
+                        $('body').html(html);
+                        toastr.success(result.message, "AE Signed In", TOAST_OPTIONS_SHORT_TIMEOUT);
+                    }
+                });
+            } else if (result.status === HTTP.STATUS.NOT_MODIFIED && result.reason === HTTP.REASON.ALREADY_EXISTS) {
+                showAEWarningPartial(result.data.lotoId, result.data.aeBemsId, result.data.aeName);
+            } else {
+                toastr.error(result.message, "AE Not Signed In", TOAST_OPTIONS);
+            }
+        },
+        error: function () {
+            $('#overrideTrainingLotoModal').hide();
+            $visitorSignInLoad.hide();
+            toastr.error('Failed', "Failed to override training. Unable to signin AE", TOAST_OPTIONS);
+        },
+        complete: function () {
+            $('#overrideTrainingLotoModal').hide();
+            $('#overrideTrainingLotoModal').modal("hide");
+            $visitorSignInLoad.hide();
+        },
+    })
+}
+
+function onReturn() {
+    $('#ae-warning-partial').hide();
+    $('#sign-in-partial').show();
+}
+
+
+
+
+<div class="card-body outer-card-body">
+    <div class="row">
+        <div id="sign-in-card" class="col-md-4 col-xs-12">
+            <ul class="nav" role="tablist" style="margin-bottom:3px;">
+                <li class="loto-tab">
+                    <a class="nav-link loto-tab-link active" style="font-size:small;" id="sign-in-tab" data-toggle="tab" href="#sign-in" role="tab" aria-controls="sign-in" aria-selected="true">PAE/AE SIGN-IN</a>
+                </li>
+                <li class="loto-tab">
+                    <a class="nav-link loto-tab-link" style="font-size:small;" id="sign-in-visitor-tab" data-toggle="tab" href="#sign-in-visitor" role="tab" aria-controls="sign-in-visitor" aria-selected="false">NON BOEING AE SIGN-IN</a>
+                </li>
+            </ul>
+            <div>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="card tab-pane fade show active" id="sign-in" role="tabpanel" aria-labelledby="sign-in-tab" style="border-top-left-radius: 0;">
+                        <div id="sign-in-partial" class="card-body d-flex flex-column" style="margin-top:0%;">
+                            @Html.Partial("Partials/LotoSignInCard", new Shield.Ui.App.ViewModels.LotoAEManagementViewModel
+                            {
+                                Header = Model.Header,
+                                Loto = Model.Loto,
+                                SessionService = Model.SessionService,
+                                Message = Model.SignInCardMessage
+                            })
+                        </div>
+                        <div id="ae-warning-partial" style="display:none;"></div>
+                    </div>
+                    <div class="card tab-pane fade" id="sign-in-visitor" role="tabpanel" aria-labelledby="sign-in-visitor-tab" style="border-top-left-radius: 0;">
+                        <div id="visitor-sign-in-partial" class="card-body d-flex flex-column" style="margin-top:0%;">
+                            @Html.Partial("Partials/LotoVisitorSignInCard", new Shield.Ui.App.ViewModels.LotoAEManagementViewModel
+                            {
+                                Header = Model.Header,
+                                Loto = Model.Loto,
+                                SessionService = Model.SessionService,
+                                Message = Model.SignInCardMessage
+                            })
+                        </div>
+                    </div>
+                </div>
+            </div>
