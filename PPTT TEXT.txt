@@ -1,0 +1,23 @@
+1st slide:
+
+Show journey month wise . Features implementation. Future Scope also.
+
+3rd slide:(Work)
+What i completed and currently ongoing work.
+How many tickets worked, major tickets, details (list of tickets), tickets features.
+
+4th slide:
+
+Current external trainings as well as all the other trainings. 
+
+5th slide:
+Starting point , started understanding.NET -> MVC market project
+
+
+2nd slide:(skills improvement)
+
+What i learned after came into boeing and what i did not know previously, which things helped me in what.
+
+
+6th slide:
+Thanks to Swetha , Jaya, Team.
