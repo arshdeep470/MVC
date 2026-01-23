@@ -1,23 +1,111 @@
-1st slide:
+Problem Statement
 
-Show journey month wise . Features implementation. Future Scope also.
+Design a Java console-based program to manage books in a library. The system should allow
 
-3rd slide:(Work)
-What i completed and currently ongoing work.
-How many tickets worked, major tickets, details (list of tickets), tickets features.
+adding books, borrowing books, and displaying available and borrowed books using Java
 
-4th slide:
-
-Current external trainings as well as all the other trainings. 
-
-5th slide:
-Starting point , started understanding.NET -> MVC market project
+Collections.
 
 
-2nd slide:(skills improvement)
 
-What i learned after came into boeing and what i did not know previously, which things helped me in what.
+Mandatory Requirements
+
+1. Data Storage
+
+You must use the following collections:
+
+• HashMap<Integer, String>
+
+→ Store Book ID as Key and Book Name as Value
+
+• ArrayList<Integer>
+
+→ Store Book IDs of borrowed books
 
 
-6th slide:
-Thanks to Swetha , Jaya, Team.
+
+2. Functional Requirements
+
+Your program should support the following operations:
+
+a) Add New Books
+
+• Allow the user to add a new book by entering:
+
+o Book ID
+
+o Book Name
+
+• Store the book in the HashM
+
+• Prevent duplicate Book IDs
+
+b) Borrow a Book
+
+• Allow the user to borrow a book using its Book ID
+
+• Check if the book exists in the library
+
+• Ensure the book is not already borrowed
+
+• Add the Book ID to the borrowed books list
+
+c) Display Available Books
+
+• Display all books that are:
+
+o Present in the library
+
+o Not currently borrowed
+
+• Show both Book ID and Book Name
+
+d) Display Borrowed Books
+
+• Display all borrowed books
+
+• Show Book ID and corresponding Book Name
+
+
+
+Program Flow (Suggested)
+
+1. Display a menu with options:
+
+o Add Book
+
+o Borrow Book
+
+o View Available Books
+
+o View Borrowed Books
+
+o Exit
+
+2. Allow the user to choose an option
+
+3. Perform the selected operation
+
+4. Repeat until the user exits
+
+Constraints & Guidelines
+
+• Use only Java Collections (no arrays for main storage)
+
+• Write clean, readable, and well-commented code
+
+• Use meaningful variable and method names
+
+• Handle invalid inputs gracefully
+
+
+
+Submission Guidelines
+
+• Submit the program as .java file(s)
+
+• Ensure the program runs without errors
+
+• Include comments explaining logic
+
+• Folder name: LibraryManagementSystem
