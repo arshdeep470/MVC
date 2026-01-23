@@ -1,140 +1,94 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Scanner;
+Topic: Full-Stack Development: Market Demand and Career Opportunities for New Developers
 
-public class LibraryManagementSystem {
+Submission Format: Word document or PDF
+Length: 2–3 pages recommended
+Deadline: [a week]
 
-    // HashMap to store Book ID and Book Name
-    private static HashMap<Integer, String> library = new HashMap<>();
+Objective: To explore the current market demand for full-stack developers, identify in-demand technologies and skills, and understand career opportunities for beginners. This research will help apprentices align their learning and projects with industry needs.
 
-    // ArrayList to store borrowed Book IDs
-    private static ArrayList<Integer> borrowedBooks = new ArrayList<>();
+ Instructions: 
 
-    private static Scanner scanner = new Scanner(System.in);
+Conduct research using job portals, tech blogs, LinkedIn, GitHub, and other credible
 
-    public static void main(String[] args) {
+sources.
 
-        int choice;
+1. Present findings in tables, charts, or diagrams where applicable.
 
-        // Menu-driven program
-        do {
-            System.out.println("\n===== Library Management System =====");
-            System.out.println("1. Add Book");
-            System.out.println("2. Borrow Book");
-            System.out.println("3. View Available Books");
-            System.out.println("4. View Borrowed Books");
-            System.out.println("5. Exit");
-            System.out.print("Enter your choice: ");
+2. Cite all sources of information at the end of your assignment.
 
-            // Validate numeric input
-            while (!scanner.hasNextInt()) {
-                System.out.print("Invalid input. Enter a number: ");
-                scanner.next();
-            }
+3. Focus on entry-level opportunities and relevant technologies for new developers.
 
-            choice = scanner.nextInt();
+Assignment Structure:
 
-            switch (choice) {
-                case 1:
-                    addBook();
-                    break;
+Part 1: Introduction
 
-                case 2:
-                    borrowBook();
-                    break;
+• Define full-stack development and its role in software development.
 
-                case 3:
-                    displayAvailableBooks();
-                    break;
+• Mention why full-stack skills are valuable for new developers. Example: Full-stack developers work on both the front-end (user interface) and back-end (server, database) of applications. They are highly valued in startups and companies seeking versatile developers.
 
-                case 4:
-                    displayBorrowedBooks();
-                    break;
+Example: Full-stack developers work on both the front-end (user interface) and back-end (server, database) of applications. They are highly valued in startups and companies seeking versatile developers.
 
-                case 5:
-                    System.out.println("Exiting Library Management System. Goodbye!");
-                    break;
+Part 2: Market Demand Analysis 
 
-                default:
-                    System.out.println("Invalid choice. Please try again.");
-            }
+• Research the current demand for full-stack developers. 
 
-        } while (choice != 5);
+• Answer these questions: 
 
-        scanner.close();
-    }
+1. Which programming languages and frameworks are most in-demand? (e.g., React, Angular, Node.js, Django) 
 
-    // Method to add a new book
-    private static void addBook() {
-        System.out.print("Enter Book ID: ");
-        int bookId = scanner.nextInt();
-        scanner.nextLine(); // consume newline
+2. What is the average salary for entry-level full-stack developers?
 
-        // Prevent duplicate Book IDs
-        if (library.containsKey(bookId)) {
-            System.out.println("Book ID already exists. Cannot add duplicate.");
-            return;
-        }
+3. Which industries or companies are hiring the most full-stack developers?
 
-        System.out.print("Enter Book Name: ");
-        String bookName = scanner.nextLine();
+Technology/Skill 	        Demand Level
+ (High/Medium/Low) 	Average Entry 
+   Level Salary	Notes / Trends 
+ReactJS	High	₹3.5–5 LPA	Popular for front-end development
+Node.js	High	₹4–6 LPA	Back-end JS runtime
+Python / Django	Medium	₹4–5 LPA	Used in web and AI projects
+SQL / MongoDB	High	₹3.5–5 LPA	Database management
 
-        library.put(bookId, bookName);
-        System.out.println("Book added successfully.");
-    }
+Part 3: Career Opportunities
 
-    // Method to borrow a book
-    private static void borrowBook() {
-        System.out.print("Enter Book ID to borrow: ");
-        int bookId = scanner.nextInt();
+• Identify entry-level job roles for full-stack developers.
 
-        // Check if book exists
-        if (!library.containsKey(bookId)) {
-            System.out.println("Book does not exist in the library.");
-            return;
-        }
+• Examples: Junior Full-Stack Developer, Web Developer, Software Engineer (Backend
 
-        // Check if already borrowed
-        if (borrowedBooks.contains(bookId)) {
-            System.out.println("Book is already borrowed.");
-            return;
-        }
+  + Frontend), Internship roles.
 
-        borrowedBooks.add(bookId);
-        System.out.println("Book borrowed successfully.");
-    }
+• Highlight potential growth paths:
 
-    // Method to display available books
-    private static void displayAvailableBooks() {
-        System.out.println("\n--- Available Books ---");
+o Backend Specialist
 
-        boolean found = false;
+o Frontend Specialist
 
-        for (Integer bookId : library.keySet()) {
-            if (!borrowedBooks.contains(bookId)) {
-                System.out.println("Book ID: " + bookId +
-                        ", Book Name: " + library.get(bookId));
-                found = true;
-            }
-        }
+o DevOps / Cloud Engineer
 
-        if (!found) {
-            System.out.println("No available books.");
-        }
-    }
+Part 4: Recommended Skills and Learning Path
 
-    // Method to display borrowed books
-    private static void displayBorrowedBooks() {
-        System.out.println("\n--- Borrowed Books ---");
+ • Suggest skills a beginner should focus on: 
 
-        if (borrowedBooks.isEmpty()) {
-            System.out.println("No books have been borrowed.");
-            return;
-        }
+o Programming Languages: JavaScript, Python 
 
-        for (Integer bookId : borrowedBooks) {
-            System.out.println("Book ID: " + bookId +
-                    ", Book Name: " + library.get(bookId));
-        }
-    }
-}
+o Frontend Frameworks: React, Angular o Backend Frameworks: Node.js, Django
+
+o Databases: MySQL, MongoDB 
+
+o Version Control: Git/GitHub
+
+Part 5: Tools and Resources
+• Job Portals: LinkedIn, Indeed, Naukri
+• Learning Platforms: freeCodeCamp, Coursera, Udemy, EdX
+
+Part 6: Conclusion 
+
+• Summarize the importance of full-stack skills in the current market. 
+
+• Highlight top technologies to focus on for career growth.
+
+• Mention how building projects and contributing to open-source can improve employability.
+
+Part 7: References 
+
+• Include all sources of information, links to job postings, blogs, and research papers.
+
