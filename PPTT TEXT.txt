@@ -1,111 +1,140 @@
-Problem Statement
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Scanner;
 
-Design a Java console-based program to manage books in a library. The system should allow
+public class LibraryManagementSystem {
 
-adding books, borrowing books, and displaying available and borrowed books using Java
+    // HashMap to store Book ID and Book Name
+    private static HashMap<Integer, String> library = new HashMap<>();
 
-Collections.
+    // ArrayList to store borrowed Book IDs
+    private static ArrayList<Integer> borrowedBooks = new ArrayList<>();
 
+    private static Scanner scanner = new Scanner(System.in);
 
+    public static void main(String[] args) {
 
-Mandatory Requirements
+        int choice;
 
-1. Data Storage
+        // Menu-driven program
+        do {
+            System.out.println("\n===== Library Management System =====");
+            System.out.println("1. Add Book");
+            System.out.println("2. Borrow Book");
+            System.out.println("3. View Available Books");
+            System.out.println("4. View Borrowed Books");
+            System.out.println("5. Exit");
+            System.out.print("Enter your choice: ");
 
-You must use the following collections:
+            // Validate numeric input
+            while (!scanner.hasNextInt()) {
+                System.out.print("Invalid input. Enter a number: ");
+                scanner.next();
+            }
 
-• HashMap<Integer, String>
+            choice = scanner.nextInt();
 
-→ Store Book ID as Key and Book Name as Value
+            switch (choice) {
+                case 1:
+                    addBook();
+                    break;
 
-• ArrayList<Integer>
+                case 2:
+                    borrowBook();
+                    break;
 
-→ Store Book IDs of borrowed books
+                case 3:
+                    displayAvailableBooks();
+                    break;
 
+                case 4:
+                    displayBorrowedBooks();
+                    break;
 
+                case 5:
+                    System.out.println("Exiting Library Management System. Goodbye!");
+                    break;
 
-2. Functional Requirements
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
 
-Your program should support the following operations:
+        } while (choice != 5);
 
-a) Add New Books
+        scanner.close();
+    }
 
-• Allow the user to add a new book by entering:
+    // Method to add a new book
+    private static void addBook() {
+        System.out.print("Enter Book ID: ");
+        int bookId = scanner.nextInt();
+        scanner.nextLine(); // consume newline
 
-o Book ID
+        // Prevent duplicate Book IDs
+        if (library.containsKey(bookId)) {
+            System.out.println("Book ID already exists. Cannot add duplicate.");
+            return;
+        }
 
-o Book Name
+        System.out.print("Enter Book Name: ");
+        String bookName = scanner.nextLine();
 
-• Store the book in the HashM
+        library.put(bookId, bookName);
+        System.out.println("Book added successfully.");
+    }
 
-• Prevent duplicate Book IDs
+    // Method to borrow a book
+    private static void borrowBook() {
+        System.out.print("Enter Book ID to borrow: ");
+        int bookId = scanner.nextInt();
 
-b) Borrow a Book
+        // Check if book exists
+        if (!library.containsKey(bookId)) {
+            System.out.println("Book does not exist in the library.");
+            return;
+        }
 
-• Allow the user to borrow a book using its Book ID
+        // Check if already borrowed
+        if (borrowedBooks.contains(bookId)) {
+            System.out.println("Book is already borrowed.");
+            return;
+        }
 
-• Check if the book exists in the library
+        borrowedBooks.add(bookId);
+        System.out.println("Book borrowed successfully.");
+    }
 
-• Ensure the book is not already borrowed
+    // Method to display available books
+    private static void displayAvailableBooks() {
+        System.out.println("\n--- Available Books ---");
 
-• Add the Book ID to the borrowed books list
+        boolean found = false;
 
-c) Display Available Books
+        for (Integer bookId : library.keySet()) {
+            if (!borrowedBooks.contains(bookId)) {
+                System.out.println("Book ID: " + bookId +
+                        ", Book Name: " + library.get(bookId));
+                found = true;
+            }
+        }
 
-• Display all books that are:
+        if (!found) {
+            System.out.println("No available books.");
+        }
+    }
 
-o Present in the library
+    // Method to display borrowed books
+    private static void displayBorrowedBooks() {
+        System.out.println("\n--- Borrowed Books ---");
 
-o Not currently borrowed
+        if (borrowedBooks.isEmpty()) {
+            System.out.println("No books have been borrowed.");
+            return;
+        }
 
-• Show both Book ID and Book Name
-
-d) Display Borrowed Books
-
-• Display all borrowed books
-
-• Show Book ID and corresponding Book Name
-
-
-
-Program Flow (Suggested)
-
-1. Display a menu with options:
-
-o Add Book
-
-o Borrow Book
-
-o View Available Books
-
-o View Borrowed Books
-
-o Exit
-
-2. Allow the user to choose an option
-
-3. Perform the selected operation
-
-4. Repeat until the user exits
-
-Constraints & Guidelines
-
-• Use only Java Collections (no arrays for main storage)
-
-• Write clean, readable, and well-commented code
-
-• Use meaningful variable and method names
-
-• Handle invalid inputs gracefully
-
-
-
-Submission Guidelines
-
-• Submit the program as .java file(s)
-
-• Ensure the program runs without errors
-
-• Include comments explaining logic
-
-• Folder name: LibraryManagementSystem
+        for (Integer bookId : borrowedBooks) {
+            System.out.println("Book ID: " + bookId +
+                    ", Book Name: " + library.get(bookId));
+        }
+    }
+}
