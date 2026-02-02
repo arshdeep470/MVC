@@ -1,94 +1,38 @@
-Topic: Full-Stack Development: Market Demand and Career Opportunities for New Developers
+Title - Market Study on Modern Website Development Practices
 
-Submission Format: Word document or PDF
-Length: 2–3 pages recommended
-Deadline: [a week]
+Objective
 
-Objective: To explore the current market demand for full-stack developers, identify in-demand technologies and skills, and understand career opportunities for beginners. This research will help apprentices align their learning and projects with industry needs.
+To understand how modern websites use responsiveness, security, and interactivity to enhance
 
- Instructions: 
+user experience and support business growth.
 
-Conduct research using job portals, tech blogs, LinkedIn, GitHub, and other credible
+Description
 
-sources.
+Learners are required to conduct a brief market research study on real-world website
 
-1. Present findings in tables, charts, or diagrams where applicable.
+development practices and relate them to core web fundamentals such as HTML, CSS,
 
-2. Cite all sources of information at the end of your assignment.
+JavaScript, HTTP/HTTPS, sessions, cookies, and responsive design.
 
-3. Focus on entry-level opportunities and relevant technologies for new developers.
+Tasks
 
-Assignment Structure:
+• Research the importance of responsive web design, web security (H TTP vs HTTPS), and
 
-Part 1: Introduction
+interactivity
 
-• Define full-stack development and its role in software development.
+• Create a static and responsive web page using HTML and CSS
 
-• Mention why full-stack skills are valuable for new developers. Example: Full-stack developers work on both the front-end (user interface) and back-end (server, database) of applications. They are highly valued in startups and companies seeking versatile developers.
+• Include standard components such as layouts and forms
 
-Example: Full-stack developers work on both the front-end (user interface) and back-end (server, database) of applications. They are highly valued in startups and companies seeking versatile developers.
+• Add at least one interactive feature using JavaScript
 
-Part 2: Market Demand Analysis 
+• Develop a basic Tic-Tac-Toe game using HTML, CSS, and JavaScript
 
-• Research the current demand for full-stack developers. 
+Deliverables
 
-• Answer these questions: 
+• Market research report (5–7 pages)
 
-1. Which programming languages and frameworks are most in-demand? (e.g., React, Angular, Node.js, Django) 
+• Source code files (HTML, CSS, JavaScript)
 
-2. What is the average salary for entry-level full-stack developers?
-
-3. Which industries or companies are hiring the most full-stack developers?
-
-Technology/Skill 	        Demand Level
- (High/Medium/Low) 	Average Entry 
-   Level Salary	Notes / Trends 
-ReactJS	High	₹3.5–5 LPA	Popular for front-end development
-Node.js	High	₹4–6 LPA	Back-end JS runtime
-Python / Django	Medium	₹4–5 LPA	Used in web and AI projects
-SQL / MongoDB	High	₹3.5–5 LPA	Database management
-
-Part 3: Career Opportunities
-
-• Identify entry-level job roles for full-stack developers.
-
-• Examples: Junior Full-Stack Developer, Web Developer, Software Engineer (Backend
-
-  + Frontend), Internship roles.
-
-• Highlight potential growth paths:
-
-o Backend Specialist
-
-o Frontend Specialist
-
-o DevOps / Cloud Engineer
-
-Part 4: Recommended Skills and Learning Path
-
- • Suggest skills a beginner should focus on: 
-
-o Programming Languages: JavaScript, Python 
-
-o Frontend Frameworks: React, Angular o Backend Frameworks: Node.js, Django
-
-o Databases: MySQL, MongoDB 
-
-o Version Control: Git/GitHub
-
-Part 5: Tools and Resources
-• Job Portals: LinkedIn, Indeed, Naukri
-• Learning Platforms: freeCodeCamp, Coursera, Udemy, EdX
-
-Part 6: Conclusion 
-
-• Summarize the importance of full-stack skills in the current market. 
-
-• Highlight top technologies to focus on for career growth.
-
-• Mention how building projects and contributing to open-source can improve employability.
-
-Part 7: References 
-
-• Include all sources of information, links to job postings, blogs, and research papers.
+• Screenshots or demo link (if hosted)
 
