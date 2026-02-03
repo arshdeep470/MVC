@@ -1,0 +1,113 @@
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json
+@using Shield.Ui.App.Models.CheckInModels
+@using Shield.Ui.App.Models.CommonModels
+@using Shield.Ui.App.Models.DiscreteModels
+@using Shield.Ui.App.Models.LotoModels
+
+@model Shield.Ui.App.ViewModels.Common.ShieldViewModel
+
+@{
+    ViewData["Title"] = "Home";
+
+    var showManageLine = false;
+    var showAddUsers = false;
+    var currentUser = Model.SessionService.GetUserFromSession(Context);
+
+    if (currentUser != null)
+    {
+        bool userHasARole = currentUser?.Role?.Name != null;
+        showManageLine = userHasARole && (currentUser.IsGC() || currentUser.IsBC() || currentUser.IsSystemAdmin() || currentUser.IsSiteAdmin());
+        showAddUsers = (currentUser.IsManager || currentUser.IsSystemAdmin() || currentUser.IsSiteAdmin() || currentUser.IsEngineer());
+    }
+}
+<section class="view intro-2 hm-stylish-strong">
+    <div class="full-bg-img checkin">
+        <div class="container top-bottom-space-md">
+            <div class="row">
+                <div class="home-page-card-wrapper col-xs-6 col-md-4 col-centered">
+                    <div class="card home-page-card hoverable">
+                        <a id="checkInButton" data-toggle="modal" data-target="#selectLineModal"
+                           onclick="showSelectLinePartial('GoToCheckIn', 'Checkin')">
+                            <div id="home-page-check-in" class="card-body " style="text-align:center;">
+                                <i class="fa fa-check-circle-o"></i>
+                                <br />
+                                <h3>Enter Check-In</h3>
+                                <span>Check in/out of aircraft</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="home-page-card-wrapper col-xs-6 col-md-4 col-centered">
+                    <div class="card home-page-card hoverable">
+                        <a id="lotoSelectLineButton" data-toggle="modal" data-target="#selectLineModal"
+                           onclick="showSelectLinePartial('ViewLotos', 'Loto')">
+                            <div id="home-page-loto" class="card-body" style="text-align:center">
+                                <i class="fa fa-lock"></i>
+                                <br />
+                                <h3>Enter LOTO</h3>
+                                <span>Sign in/out of a job that requires LOTO</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="home-page-card-wrapper col-xs-6 col-md-4 col-centered">
+                    <div class="card home-page-card hoverable">
+                        <a id="hecpButton" onclick="getManageLinesModalForHecp('ViewFilteredHecps', 'Hecp', 'View Hecp List', 'HECP')">
+                            <div id="home-page-discrete" class="card-body" style="text-align:center">
+                                <i class="fa icon-double-helix"></i>
+                                <br />
+                                <h3>HECP</h3>
+                                Build/Review HECP
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="home-page-card-wrapper col-xs-6 col-md-4 col-centered">
+                    <div class="card home-page-card hoverable">
+                        <a id="reportButton" onclick="getCheckInReportModal('ViewCheckinReportsForSite', 'CheckIn', 'View Check In Report', 'Reports')">
+                            <div id="home-page-report" class="card-body" style="text-align:center">
+                                <i class="fa fa-bar-chart" style="font-size:10em;"></i>
+                                <br />
+                                <h3>Reports</h3>
+                                Check-in reports
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                @if (showManageLine)
+                {
+                    <div class="home-page-card-wrapper col-xs-6 col-md-4 col-centered">
+                        <div class="card home-page-card hoverable">
+                            <a id="manageLineButton" onclick="getManageLinesModal('ManageLines', 'Admin', 'Manage Lines', 'Manage Lines')">
+                                <div id="home-page-manage-lines" class="card-body" style="text-align:center">
+                                    <i class="fa fa-plane"></i>
+                                    <br />
+                                    <h3>Manage Lines</h3>
+                                    Add/remove/edit lines
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                }
+                @if (showAddUsers)
+                {
+                    <div class="home-page-card-wrapper col-xs-6 col-md-4 col-centered">
+                        <div class="card home-page-card hoverable">
+                            <a id="addUsersButton" href="@Url.Action("AddUsers","Admin")">
+                                <div id="home-page-add-users" class="card-body" style="text-align:center;color:black;">
+                                    <i class="fa fa-user"></i>
+                                    <br />
+                                    <h3>Administration</h3>
+                                    Manage Users/Components
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>

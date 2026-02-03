@@ -1,0 +1,591 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json
+@using Shield.Ui.App.Models.CheckInModels
+@using Shield.Ui.App.Models.LotoModels
+@using Shield.Ui.App.Models.DiscreteModels
+@using Shield.Ui.App.Models.CommonModels
+@using Shield.Ui.App.ViewModels.UserPin
+<!DOCTYPE html>
+@*<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">*@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    @{
+        var pageTitle = "";
+        if (ViewData["Title"] == null || ViewData["Title"].ToString().Trim().Equals(""))
+        {
+            pageTitle = "SHIELD";
+        }
+        else
+        {
+            pageTitle = @ViewData["Title"] + " | SHIELD";
+        }
+
+        //var backupUI = Environment.GetEnvironmentVariable("BACKUP_UI_URL");
+        int TimeOutInMilliSeconds = Convert.ToInt32(Environment.GetEnvironmentVariable("UserSessionTimeOutInMilliSeconds"));
+        int TimeOutWarningInMilliSeconds = Convert.ToInt32(Environment.GetEnvironmentVariable("UserSessionTimeOutWarningInMilliSeconds"));
+        //String autoLogoutWarningMessage = Environment.GetEnvironmentVariable("LogOutWarningMessage");
+
+        <title>@pageTitle</title>
+    }
+
+    <!-- Use, keywords, separated, by, commas limit 512 characters -->
+    <meta name="subject" content="Shield,EHS,LOTO,Checkin,DTE,Lock Out Tag Out,Safety,OSHA,HECP,group coordinator,gc,pae,harzardous energy" />
+    <!-- Page description that may be displayed in search results limit 2048 characters -->
+    <meta name="description" content="Shield is an Enterprise IT system for managing the Aircraft Hazardous Energy program." />
+
+    <meta name="robots" content="All" />
+
+    <link rel="stylesheet" href="~/css/font-awesome.min.css">
+    <link id="app-level" rel="stylesheet" href="~/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/mdb.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/style.css" />
+    <link rel="stylesheet" href="~/css/toastr.css" />
+    <link rel="stylesheet" href="~/css/discrete-style.css" />
+    <link rel="stylesheet" href="~/css/adminDashboard-style.css" />
+    <link rel="stylesheet" href="~/css/loto-style.css" />
+    <link rel="stylesheet" href="~/css/checkin-style.css" />
+    <link rel="stylesheet" href="~/css/modal-style.css" />
+    <link rel="stylesheet" href="~/css/homepage-style.css" />
+    <link rel="stylesheet" href="~/css/manageLines-style.css" />
+    <link rel="stylesheet" href="~/css/shield-custom-icons.css" />
+    <link rel="stylesheet" href="~/css/bootstrap-select.min.css" />
+    <script src="~/js/jquery.min.js"></script>
+    <script src="~/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/bootstrap-select.min.js"></script>
+    <link id="app-level" rel="stylesheet" href="~/css/jquery.dataTables.min.css" />
+    <link id="app-level" rel="stylesheet" href="~/jquery-ui-dist/jquery-ui.min.css" />
+    <script src="~/js/jquery.dataTables.min.js"></script>
+    <script src="~/js/jquery-ui.min.js"></script>
+    <script>
+        var timeoutWarning = @TimeOutWarningInMilliSeconds;
+        var timeoutNow = @TimeOutInMilliSeconds;
+        var logoutUrl = '/Home/Logout?path=SessionTimeout'
+
+        var warningTimer;
+        var timeoutTimer;
+
+        function idleTimeOut() {
+            $("#TimeOutDialogBox").dialog("close");
+            location.href = logoutUrl;
+        }
+
+        function showAutoSignoutWarning() {
+            $("#TimeOutDialogBox").dialog("open");
+        }
+
+        function startTimer() {
+            timeoutTimer = setTimeout("idleTimeOut()", timeoutNow);
+            warningTimer = setTimeout("showAutoSignoutWarning()", timeoutWarning);
+        }
+
+        function resetTimer() {
+            clearTimeout(timeoutTimer);
+            clearTimeout(warningTimer);
+            startTimer();
+            $("#TimeOutDialogBox").dialog("close");
+        }
+
+
+        $(document).ready(function () {
+            if ($("#isUserLoggedIn").val().toLowerCase() == "true") {
+                $("#TimeOutDialogBox").removeAttr('hidden');
+                startTimer();
+                $("body").on('click keypress', function () {
+                    resetTimer();
+                });
+                $("#TimeOutDialogBox").dialog({
+                    autoOpen: false,
+                    height: 250,
+                    width: 450
+                });
+            }
+
+            CheckBrowserCompatibility();
+        });
+
+
+
+    </script>
+</head>
+<body>
+    @{
+        bool showOutageWarning = Convert.ToBoolean(Environment.GetEnvironmentVariable("SHOW_OUTAGE_WARNING"));
+        string ShieldOutageWarning = Environment.GetEnvironmentVariable("SHIELD_OUTAGE_WARNING");
+        string SessionTimeoutMessage = Environment.GetEnvironmentVariable("UserSessionTimeOutMessage");
+        var showManageLine = false;
+        var showAddUser = false;
+        var canResetPin = false;
+        var showSessionTimeoutMessage = false;
+        var currentUserString = Context.Request.Cookies["shield_current_user"];
+        int currentUserBemsId = 0;
+        var userLoggedIn = false;
+        bool isErrorPage = string.Equals(Context.Request.Path.Value, "/Error", StringComparison.InvariantCultureIgnoreCase);
+        if (currentUserString != null)
+        {
+            var currentUser = JsonConvert.DeserializeObject<User>(currentUserString);
+            currentUserBemsId = currentUser.BemsId;
+            var userHasARole = currentUser != null &&
+            currentUser.Role != null &&
+            currentUser.Role.Name != null;
+            showManageLine = userHasARole && (currentUser.IsGC() || currentUser.IsBC() || currentUser.IsSystemAdmin() || currentUser.IsSiteAdmin());
+            showAddUser = userHasARole && (currentUser.IsManager || currentUser.IsSystemAdmin() || currentUser.IsSiteAdmin() || currentUser.IsEngineer());
+            canResetPin = userHasARole && (currentUser.IsGC() || currentUser.IsBC() || currentUser.IsSystemAdmin() || currentUser.IsSiteAdmin() || currentUser.IsCCAndPAE());
+            userLoggedIn = userHasARole;
+        }
+
+        if (TempData["SessionTimeout"] != null && !String.IsNullOrEmpty(TempData["SessionTimeout"].ToString()) && String.Equals(TempData["SessionTimeout"].ToString(), "true", StringComparison.CurrentCultureIgnoreCase))
+        {
+            TempData.Remove("SessionTimeout");
+            showSessionTimeoutMessage = true;
+            userLoggedIn = false;
+        }
+
+        var pageTitle1 = "";
+        if (ViewData["Title"] == null || ViewData["Title"].ToString().Trim().Equals(""))
+        {
+            pageTitle1 = "SHIELD";
+        }
+        else
+        {
+            pageTitle1 = @ViewData["Title"] + " | SHIELD";
+        }
+        var backupUI = Environment.GetEnvironmentVariable("BACKUP_UI_URL");
+        String autoLogoutWarningMessage = Environment.GetEnvironmentVariable("LogOutWarningMessage");
+
+        string environmentMessage = Environment.GetEnvironmentVariable("EnvironmentMessage");
+        string checkInHelpLink = Environment.GetEnvironmentVariable("CheckInHelpLink");
+        string userGuideLink = Environment.GetEnvironmentVariable("UserGuideLink");
+        string releaseNotes = Environment.GetEnvironmentVariable("ReleaseNotes");
+    }
+    <!--Main Navigation-->
+    <header>
+        <!--Navbar-->
+        <nav class="navbar navbar-expand-lg navbar-dark fixed-top scrolling-navbar">
+            <div class="container" style="line-height: 35px; vertical-align: middle;background-color:#0d47a1;max-width:1200px;">
+                <a class="navbar-brand" href="/">
+                    <i class="fa fa-shield fa-2x" aria-hidden="true"></i>
+                    <strong>Shield</strong>
+                    @if (!String.IsNullOrEmpty(environmentMessage))
+                    {
+                        <span id="environmentMessage" style="color:yellow;border:solid 1px;font-size:1rem">
+                            @environmentMessage
+                        </span>
+                    }
+                </a>
+
+                @if (!pageTitle1.ToLower().Contains("home")) // Hide Nav Tabs if on Homepage
+                {
+                    <!-- Collapsible content -->
+                    <div class="collapse navbar-collapse" id="collapsableMainNavBar">
+
+                        <!-- Links -->
+                        <ul class="navbar-nav mr-auto">
+                            <li class="nav-item  margin-right-point5rem" id="checkin-nav-tab">
+                                <a class="nav-link"
+                                   data-toggle="modal"
+                                   data-target="#selectLineModal"
+                                   onclick="showSelectLinePartial('GoToCheckIn', 'Checkin')"
+                                   style="font-size:1.25rem;">
+                                    Check-In
+                                </a>
+                            </li>
+                            <li class="nav-item  margin-right-point5rem" id="loto-nav-tab">
+                                <a class="nav-link"
+                                   data-toggle="modal"
+                                   data-target="#selectLineModal"
+                                   onclick="showSelectLinePartial('ViewLotos', 'Loto')"
+                                   style="font-size:1.25rem;">
+                                    LOTO
+                                </a>
+                            </li>
+                            <li class="nav-item  margin-right-point5rem hiddendiv" id="discrete-nav-tab">
+                                <a class="nav-link"
+                                   onclick="getManageLinesModal('ViewDiscretes', 'Discrete', 'View Discretes', 'Discrete HECP')"
+                                   style="font-size:1.25rem;">
+                                    Discrete
+                                </a>
+                            </li>
+                            <li class="nav-item  margin-right-point5rem" id="hecp-nav-tab">
+                                <a class="nav-link"
+                                   onclick="getManageLinesModalForHecp('ViewFilteredHecps', 'Hecp', 'View Hecp List', 'HECP')"
+                                   style="font-size:1.25rem;">
+                                    HECP
+                                </a>
+                            </li>
+
+                            @if (showManageLine)
+                            {
+                                <li class="nav-item  margin-right-point5rem" id="manage-nav-tab">
+                                    <a class="nav-link"
+                                       onclick="getManageLinesModal('ManageLines', 'Admin', 'Manage Lines', 'Manage Lines')"
+                                       style="font-size:1.25rem;">
+                                        Manage Lines
+                                    </a>
+                                </li>
+                            }
+
+                            <li class="nav-item  margin-right-point5rem" id="reports-nav-tab">
+                                <a class="nav-link"
+                                   onclick="getCheckInReportModal('ViewCheckinReportsForSite', 'CheckIn', 'View Check In Report', 'Reports')"
+                                   style="font-size:1.25rem;">
+                                    Reports
+                                </a>
+                            </li>
+
+                            @if (showAddUser)
+                            {
+                                <li class="nav-item  margin-right-point5rem" id="add-user-nav-tab">
+                                    <a class="nav-link"
+                                       asp-area="" asp-controller="Admin" asp-action="AddUsers"
+                                       style="font-size:1.25rem;">
+                                        Administration
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                        <!-- Links -->
+
+                    </div>
+                }
+                <!-- Collapsible content -->
+                @if (!isErrorPage)
+                {
+                    <div id="current-user" class="flex-row">
+                        <div id="welcome-user">
+                            @{
+                                var userString = Context.Request.Cookies["shield_current_user"];
+
+                                @if (userString != null)
+                                {
+                                    User user = JsonConvert.DeserializeObject<User>(userString);
+                                    string avatar = "https://insite.web.boeing.com/culture/avatar/" + @user.EmailAddress;
+                                    if (user != null && user.FirstName != null)
+                                    {
+                                        <div>
+                                            <h5 class="home-page-header">
+                                                <img src="@avatar" width="50" height="50" class="right-space-xsm">                                                
+                                            </h5>                                            
+                                        </div>
+                                    }
+                                }
+                            }
+                        </div>
+                        <div id="welcome-user">
+                            @{
+                                @if (userString != null)
+                                {
+                                    User user = JsonConvert.DeserializeObject<User>(userString);
+                                    if (user != null && user.FirstName != null)
+                                    {
+                                        <div>
+                                            <h4 class="home-page-header">@user.FirstName</h4>
+                                            <h6 class="home-page-header header-role">@user.Role?.Name</h6>                                            
+                                        </div>                                       
+                                    }
+                                    else
+                                    {
+                                        <div>
+                                            <a class="white-text" id="wssoBtn" asp-controller="secure" asp-action="login" asp-route-path="@Html.Raw(Context.Request.Path + Context.Request.QueryString)">
+                                                <h4 class="mb-0"><i class="fa fa-sign-in prefix right-space-sm pl-2" aria-hidden="true"></i></h4>
+                                                <h6 class="font-bold" style="margin-bottom: 0px !important;">Log In</h6>
+                                            </a>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div>
+                                        <a class="white-text" id="wssoBtn" asp-controller="secure" asp-action="login" asp-route-path="@Html.Raw(Context.Request.Path + Context.Request.QueryString)">
+                                            <h4 class="mb-0"><i class="fa fa-sign-in prefix right-space-sm pl-2" aria-hidden="true"></i></h4>
+                                            <h6 class="home-page-header">Log In</h6>
+                                        </a>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <div id="welcome-user">
+                            @{                                
+                                @if (userString != null)
+                                {
+                                    User user = JsonConvert.DeserializeObject<User>(userString);
+                                    if (user != null && user.FirstName != null)
+                                    {
+                                        <div>
+                                            <h4 class="home-page-header">
+                                                <a class="header-logout-text" onclick="showLogoutPopup()">
+                                                    <i class="fa fa-power-off pl-4" aria-hidden="true"></i>
+                                                </a>
+                                            </h4>
+
+                                            <h6 class="home-page-header header-role">
+                                                <a class="left-space-sm header-logout-text" onclick="showLogoutPopup()">Log Out</a>
+                                            </h6>
+                                        </div>
+                                    }
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Collapse button -->
+                <button class="navbar-toggler toggler-example float-right" type="button" data-toggle="collapse" data-target="#collapsableMainNavBar" aria-controls="navbarSupportedContent1"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="dark-blue-text"><i class="fa fa-bars fa-1x"></i></span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="notification-container">
+        <div class="shield-warning-label-IE warning-color" id="shield-warning-IE" style="display: none;">
+            <div class="alert alert-danger fade show" id="request-success" role="alert" style="margin-bottom:0!important">
+                <i class="fa fa-exclamation-triangle text-lg-left red-text prefix size-icon"></i>
+                We noticed you're using Internet Explorer which will be out of support soon. Please use a modern browser such as Firefox or Microsoft Edge.
+            </div>
+        </div>
+
+        @if (showOutageWarning)
+        {
+            <div class="shield-warning-label warning-color">
+                <marquee scrollamount="3">
+                  <pre class="shield-warning-label-text-pre">@ShieldOutageWarning</pre>
+                </marquee>               
+            </div>
+        }
+
+        @if (showSessionTimeoutMessage)
+        {
+            <div class="shield-warning-label">
+                <span class="shield-warning-label-text">@SessionTimeoutMessage</span>
+            </div>
+        }
+    </div>
+
+    <div id="LogoutAcknowledgementPopUpDiv" class="card modal fade" role="dialog" tabindex="-1" style="display: none; z-index: 100;height:15rem; top: 0; bottom: 0; left: 0; right: 0;margin:auto; margin-top: 15px;width:35rem">
+        <div>
+            <div class="modal-header red darken-1 white-text">
+                <h4 class="modal-title">Confirm Logout</h4><br>
+            </div>
+            <div>
+                <div class="modal-body">
+                    <a>
+                        After clicking LOG OUT, close the next page by clicking on the [X] button at the top of the page.
+                    </a>
+                    <br>
+                    <span class="modal-footer">
+                        <button onclick="CloseLogoutAcknowledgementPopup()" type="button" class="btn btn-secondary-gray btn-rounded black-text float-right" data-dismiss="modal" aria-label="Close">
+                            <i class="fa fa-times prefix cancel-icon" style="color:black !important;"></i> Cancel
+                        </button>
+
+                        <a class="btn btn-rounded black-text float-right" style="background:red" onclick="ClearAuthenticationSession()" asp-controller="Home" asp-action="Logout" asp-route-path="@Html.Raw(Context.Request.Path + Context.Request.QueryString)">
+                            <i class="fa fa-check-circle prefix right-space-xsm"></i>
+                            LOG OUT
+                        </a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @RenderBody()
+    <a class="white-text" id="help-link">
+        <div id="help-container"
+             data-html="true"
+             data-toggle="popover" data-placement="top"
+             title="We're here to help."
+             data-content="
+        <p>
+            <a href=@userGuideLink target='_blank'>
+                <i class='fa fa-book' aria-hidden='true'></i> User Guide
+            </a>
+        </p>
+           
+        <p>
+            @if (!string.IsNullOrEmpty(releaseNotes))
+            {                
+                 <a href=@releaseNotes target='_blank'>
+                      <i class='fa fa-bell' aria-hidden='true'></i> Release Notes
+                </a>
+            }
+        </p>
+       
+        <p>
+            <a href='https://boeing.service-now.com/sp?id=kb_article_view&sysparm_article=KB0013587&sys_kb_id=45604341dbd25c103c7f5aa8dc9619f9&spa=1' target='_blank'>
+                <i class='fa fa-envelope' aria-hidden='true'></i> Send Support a Message
+            </a>
+        </p>
+        <p>
+            <a href='@Url.Action("outageAppPage", "Outage")'>
+                <i class='fa fa-tv' aria-hidden='true'>
+                </i> Outage app
+            </a>
+        </p>
+
+        @if (canResetPin)
+        {
+            <p>
+                <a
+                 data-toggle='modal' href=''
+                 data-target='#resetPinModal'
+                         onclick='showResetPinPopUp(@currentUserBemsId)'>
+                            <i class='fa fa-refresh' aria-hidden='true'></i> Generate / Reset PIN
+                </a>
+            </p>
+        }
+
+        @*<p>
+        <a href='@backupUI' target='_blank'><i class='fa fa-tv' aria-hidden='true'>
+        </i> View Data During Outage</a>
+        </p>*@
+    ">
+    <i class="fa fa-question-circle"></i>
+
+    </div>
+    </a>
+    @await Html.PartialAsync("Partials/SelectLineModalsPartial");
+    @await Html.PartialAsync("Partials/ResetPinModalsPartial");
+
+    <!--Main Navigation-->
+    <!--Footer-->
+    <footer class="page-footer" id="page-footer">
+        <!--Footer links-->
+        <div class="container" style="">
+            <div class="row">
+                <!--First column-->
+                <div class="col-lg-6 ml-auto" id="page-footer-ehs-links">
+                    <h5 class="title mb-3"><strong>Enterprise Health &amp; Safety Links</strong></h5>
+                    <ul>
+                        <li>
+                            <a href="http://forms.boeing.com/detail.cfm?fnum=X39136" target="_blank">Paper Check-In Form</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                        <li>
+                            <a href="http://forms.web.boeing.com/detail.cfm?fnum=X35861" target="_blank">LOTO Form-X35861</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                        <li>
+                            <a href="http://forms.web.boeing.com/detail.cfm?fnum=X35861A" target="_blank">LOTO Form-X35861A</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                        <li>
+                            <a id="check-in-help-link" href=@checkInHelpLink target="_blank">Check-In Help</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                        <li>
+                            <a href="https://hazen.web.boeing.com/" target="_blank">BCA HECP Website</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                        <li>
+                            <a href="https://onepppm.web.boeing.com/onepppm/app/documents/show?refer=search&id=BPI-2404" target="_blank">BPI-2404</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                    </ul>
+                </div>
+                <!--Second column-->
+                <div class="col-lg-6 d-flex flex-column align-items-lg-end" id="page-footer-help-links">
+                    <h5 class="title mb-3 "><strong>Help</strong></h5>
+                    <ul>
+                        <li>
+                            <a href=@userGuideLink target="_blank">User Guide</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                        <li>
+                            @if(!string.IsNullOrEmpty(releaseNotes)){
+                            <a href=@releaseNotes target="_blank">Release Notes</a>
+                                <i class="fa fa-bell-o"style="color:red"></i>
+                                <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                            }
+                        </li>
+                        <li>
+                            <a href="https://boeing.service-now.com/sp?id=kb_article_view&sysparm_article=KB0013587&sys_kb_id=45604341dbd25c103c7f5aa8dc9619f9&spa=1"
+                                target="_blank">Send Support a Message</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("outageAppPage", "Outage")" target="_blank">Outage app</a>
+                            <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                        </li>
+                        @if (canResetPin)
+                        {
+                            <li>
+                                <a data-toggle='modal' href='' data-target='#resetPinModal'
+                                onclick='showResetPinPopUp(@currentUserBemsId)'> Generate / Reset PIN</a>
+                                <i class="fa fa-external-link " style="padding-right: 0.3rem;"></i>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!--/.Footer links-->
+        <!--Copyright-->
+        <div id="footer-copyright" class="footer-copyright">
+            <div class="container-fluid">
+                <a href="http://www.boeing.com"> © @DateTime.Now.Year Copyright</a>
+                &nbsp;-&nbsp;
+                <a href="http://www.boeing.com"> Boeing.com. </a><span style="color:#fff">@Environment.GetEnvironmentVariable(Shield.Ui.App.Common.Constants.VERSIONING_MSG)</span>
+            </div>
+        </div>
+        <div id="TimeOutDialogBox" hidden="hidden">
+            <h3>@autoLogoutWarningMessage</h3>
+            <h3>To continue please click anywhere in the application</h3>
+        </div>
+        <!--/.Copyright-->
+
+    </footer>
+    <input id="isUserLoggedIn" type="hidden" value="@userLoggedIn.ToString()" />
+    <iframe id="wssoIFrame" style="display:none"></iframe>
+
+
+    <script type="text/javascript" src="~/js/mdb.min.js" asp-append-version="true"></script>
+    <script type="text/javascript" src="~/js/polyfill.min.js"></script>
+    <script type="text/javascript" src="~/js/toastr.min.js"></script>
+    <script type="text/javascript" src="~/js/moment.js"></script>
+    <script type="text/javascript" src="~/js/moment-timezone.js"></script>
+
+    @if (TempData["WssoLogoutNeeded"] != null && TempData["WssoLogoutNeeded"].Equals("TRUE"))
+    {
+        <script type="text/javascript">
+
+
+        </script>
+        TempData["WssoLogoutNeeded"] = "";
+    }
+
+
+    <script type="text/javascript">
+        function CloseLogoutAcknowledgementPopup() {
+            document.getElementById('LogoutAcknowledgementPopUpDiv').style.display = "none";
+            document.getElementById('LogoutAcknowledgementPopUpDiv').classList.remove('show');
+        };
+
+        function showLogoutPopup() {
+            document.getElementById('LogoutAcknowledgementPopUpDiv').style.display = "block";
+            document.getElementById('LogoutAcknowledgementPopUpDiv').classList.add('show');
+        };
+    </script>
+
+    <script type="text/javascript" src="~/js/Constants.js"></script>
+    <script type="text/javascript" src="~/js/CommonFunctions.js"></script>
+    <script type="text/javascript" src="~/js/HecpScripts.js"></script>
+    <script type="text/javascript" src="~/js/LotoScripts.js"></script>
+    <script type="text/javascript" src="~/js/CheckInScripts.js"></script>
+    <script type="text/javascript" src="~/js/Reports.js"></script>
+     <script type="text/javascript" src="~/js/Outage.js"></script>
+    <script type="text/javascript" src="~/js/TinyMCE.7.2.0/content/scripts/tinymce/tinymce.min.js"></script>
+    <script type="text/javascript" src="~/js/widgetsjs.js"></script>
+    <script type="text/javascript" src="~/js/people.js"></script>
+    <script type="text/javascript" src="~/js/hovercard.js"></script>
+    <script type="text/javascript">
+        var hovercards = new INSITE.Hovercard();
+    </script>
+    @RenderSection("Scripts", required: false)
+    @await Component.InvokeAsync("NToastNotify")
+</body>
+</html>
