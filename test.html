@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHIELD - LOTO Logbook Redesign</title>
+    <!-- Importing a professional font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --boeing-blue: #003366;
+            --action-blue: #007bff;
+            --success-green: #28a745;
+            --warning-orange: #ff8c00;
+            --bg-gray: #f8f9fa;
+            --card-border: #dee2e6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e9ecef;
+            margin: 0;
+            color: #333;
+        }
+
+        /* Top Navigation Bar */
+        .navbar {
+            background-color: var(--boeing-blue);
+            color: white;
+            padding: 12px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .nav-brand { font-weight: 800; font-size: 1.2rem; }
+        .nav-brand span { background: #ffd700; color: black; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 5px; }
+        
+        .nav-menu a { color: white; text-decoration: none; margin: 0 15px; font-size: 0.9rem; opacity: 0.8; }
+        .nav-menu a.active { opacity: 1; border-bottom: 2px solid white; padding-bottom: 5px; }
+
+        /* Context Header (Line & Coordinator) */
+        .header-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label { font-size: 0.75rem; color: #6c757d; font-weight: 600; text-transform: uppercase; }
+        .value { font-size: 1.4rem; font-weight: 700; color: var(--boeing-blue); margin-top: 5px; }
+        .sub-value { font-size: 0.9rem; color: #495057; }
+
+        /* NEW ACTION BAR SECTION */
+        .action-bar {
+            background: white;
+            margin: 10px 40px 30px 40px;
+            padding: 15px 30px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            max-width: 1340px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .status-indicators {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-pill {
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pill-active { background: #e8f5e9; color: var(--success-green); border: 1px solid #c8e6c9; }
+        .pill-transfer { background: #fff3e0; color: var(--warning-orange); border: 1px solid #ffe0b2; }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .btn-claim { background-color: var(--action-blue); color: white; margin-left: 20px; }
+        .btn-claim:hover { background-color: #0056b3; box-shadow: 0 4px 8px rgba(0,123,255,0.3); }
+
+        .btn-create { background-color: #2b59ff; color: white; }
+        .btn-secondary { background: #f1f3f5; color: #495057; margin-right: 10px; }
+
+        /* LOTO Cards Grid */
+        .content-body { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+        .grid-title { font-size: 1rem; color: #6c757d; margin-bottom: 20px; font-weight: 600; }
+
+        .loto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .loto-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-top: 6px solid #dee2e6;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .loto-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .card-needs-lockout { border-top-color: var(--action-blue); }
+        .card-active { border-top-color: var(--success-green); }
+        .card-completed { border-top-color: #adb5bd; }
+
+        .card-content { padding: 25px; text-align: center; flex-grow: 1; }
+        .status-icon { font-size: 2rem; margin-bottom: 15px; display: block; }
+        .card-status-text { text-transform: uppercase; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; }
+        
+        .card-title { font-size: 1.25rem; font-weight: 700; margin: 10px 0; color: #212529; }
+        .card-desc { font-size: 0.85rem; color: #6c757d; line-height: 1.5; }
+
+        .card-footer {
+            background: #f8f9fa;
+            padding: 15px 25px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #495057;
+        }
+
+        .footer-val { font-weight: 700; display: block; color: #212529; font-size: 0.8rem; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">SHIELD <span>DEV</span></div>
+        <div class="nav-menu">
+            <a href="#">Check-In</a>
+            <a href="#" class="active">LOTO</a>
+            <a href="#">HECP</a>
+            <a href="#">Manage Lines</a>
+            <a href="#">Reports</a>
+            <a href="#">Administration</a>
+        </div>
+        <div style="font-size: 0.85rem;">GC_First System Admin | <strong style="cursor:pointer">Log Out</strong></div>
+    </nav>
+
+    <!-- Context Information -->
+    <header class="header-container">
+        <div class="header-card">
+            <div>
+                <div class="label">Line Number</div>
+                <div class="value" style="color: #d63031;"># LNLotoLine</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="label">Program & Site</div>
+                <div class="sub-value">✈ 737 | 🏢 Everett</div>
+            </div>
+        </div>
+        <div class="header-card">
+            <div>
+                <div class="label">Group Coordinator</div>
+                <div class="value">GC_First GC_Last</div>
+            </div>
+            <div style="color: #28a745; font-size: 2rem;">✔</div>
+        </div>
+    </header>
+
+    <!-- THE REDESIGNED ACTION BAR (Per your request) -->
+    <section class="action-bar">
+        <div class="status-indicators">
+            <!-- New additions placed on the extreme left of the Claim button -->
+            <div class="status-pill pill-active">
+                ● Active: 5
+            </div>
+            <div class="status-pill pill-transfer">
+                ⇄ Transfer: 2
+            </div>
+            
+            <button class="btn btn-claim">CLAIM ALL ACTIVE LOTOS</button>
+        </div>
+
+        <div>
+            <button class="btn btn-secondary">VIEW ALL ISOLATIONS</button>
+            <button class="btn btn-create">+ CREATE LOTO</button>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="content-body">
+        <div class="grid-title">3 most recently created or updated LOTOs</div>
+        
+        <div class="loto-grid">
+            <!-- Card 1: Needs Lockout -->
+            <div class="loto-card card-needs-lockout">
+                <div class="card-content">
+                    <span class="status-icon">🔓</span>
+                    <span class="card-status-text" style="color: var(--action-blue);">Needs Lockout</span>
+                    <div class="card-title">Electrical bulb change</div>
+                    <p class="card-desc">kalyan is testing beware, hecp circuit testing in progress...</p>
+                </div>
+                <div class="card-footer">
+                    <div>PAE <span class="footer-val">Vidhatri Bapu</span></div>
+                    <div style="text-align: right;">Created <span class="footer-val">11/27/24 3:15 PM</span></div>
+                </div>
+            </div>
+
+            <!-- Card 2: Active -->
+            <div class="loto-card card-active">
+                <div class="card-content">
+                    <span class="status-icon" style="font-size: 2.5rem; font-weight: 800; color: var(--success-green);">0</span>
+                    <span class="card-status-text" style="color: var(--success-green);">Active AEs</span>
+                    <div class="card-title">Testing after release 3-7-2</div>
+                    <p class="card-desc">No Isolation, 737 78-31-02 Thrust Reverser System...</p>
+                </div>
+                <div class="card-footer">
+                    <div>PAE <span class="footer-val">Akash Randive</span></div>
+                    <div style="text-align: right;">Created <span class="footer-val">05/06/25 8:47 PM</span></div>
+                </div>
+            </div>
+
+            <!-- Card 3: Completed -->
+            <div class="loto-card card-completed">
+                <div class="card-content">
+                    <span class="status-icon">✓</span>
+                    <span class="card-status-text">Completed</span>
+                    <div class="card-title">June1C</div>
+                    <p class="card-desc">Minor Model: 7 | PLEASE IGNORE, 2026-1-19 Update</p>
+                </div>
+                <div class="card-footer">
+                    <div>PAE <span class="footer-val">None</span></div>
+                    <div style="text-align: right;">Created <span class="footer-val">01/19/26 2:41 PM</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-title">4 other LOTOs for Line LotoLine</div>
+        <!-- Simplified Second Row -->
+        <div class="loto-grid">
+             <div class="loto-card card-needs-lockout">
+                <div class="card-content">
+                    <span class="status-icon">🔓</span>
+                    <span class="card-status-text" style="color: var(--action-blue);">Needs Lockout</span>
+                    <div class="card-title">loto1,hello</div>
+                    <p class="card-desc">this is a test without any minor model</p>
+                </div>
+                <div class="card-footer">
+                    <div>PAE <span class="footer-val">Nijin Poyil</span></div>
+                    <div style="text-align: right;">Created <span class="footer-val">11/08/24</span></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>
