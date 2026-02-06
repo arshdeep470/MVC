@@ -1,0 +1,57 @@
+2026-02-06T14:15:07.9414097Z ##[section]Starting: NuGet Authenticate with Artifactory
+2026-02-06T14:15:07.9420969Z ==============================================================================
+2026-02-06T14:15:07.9421108Z Task         : NuGet authenticate
+2026-02-06T14:15:07.9421178Z Description  : Configure NuGet tools to authenticate with Azure Artifacts and other NuGet repositories. Requires NuGet >= 4.8.5385, dotnet >= 6, or MSBuild >= 15.8.166.59604
+2026-02-06T14:15:07.9421344Z Version      : 1.231.0
+2026-02-06T14:15:07.9421409Z Author       : Microsoft Corporation
+2026-02-06T14:15:07.9421492Z Help         : https://aka.ms/NuGetAuthenticateTask
+2026-02-06T14:15:07.9421567Z ==============================================================================
+2026-02-06T14:15:08.4996952Z Installing the Azure Artifacts Credential Provider (.NET Framework) to 'C:\Users\SVCGIDEADOBldProd\.nuget\plugins\netfx\CredentialProvider.Microsoft'. This credential provider is compatible with nuget.exe 4.8.0.5385 or later, and MSBuild 15.8.166.59604 or later.
+2026-02-06T14:15:09.0257567Z 
+2026-02-06T14:15:09.0258577Z Installing the Azure Artifacts Credential Provider (.NET Core) to 'C:\Users\SVCGIDEADOBldProd\.nuget\plugins\netcore\CredentialProvider.Microsoft'. This credential provider is compatible with .NET SDK 6 or later.
+2026-02-06T14:15:09.2791603Z 
+2026-02-06T14:15:09.3567487Z Setting up the credential provider to use the identity 'Project Collection Build Service (IT)' for feeds in your organization/collection starting with:
+2026-02-06T14:15:09.3567851Z   https://gide-tfs.web.boeing.com/tfs/IT/
+2026-02-06T14:15:09.3567926Z 
+2026-02-06T14:15:09.3858826Z ##[section]Finishing: NuGet Authenticate with Artifactory
+
+
+
+
+
+
+
+
+
+
+
+
+
+       I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records\CheckIn.Services.Records.csproj : error NU1301:   Response status code does not indicate success: 403. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+         I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records\CheckIn.Services.Records.csproj : error NU1301: Failed to retrieve information about 'Microsoft.EntityFrameworkCore.Design' from remote source 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Remote/FindPackagesById()?id='Microsoft.EntityFrameworkCore.Design'&semVerLevel=2.0.0'. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+       I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records\CheckIn.Services.Records.csproj : error NU1301:   Response status code does not indicate success: 403. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+         I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj : error NU1301: Failed to retrieve information about 'Microsoft.EntityFrameworkCore.Design' from remote source 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Remote/FindPackagesById()?id='Microsoft.EntityFrameworkCore.Design'&semVerLevel=2.0.0'.
+       I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj : error NU1301:   Response status code does not indicate success: 403.
+         C:\Program Files\dotnet\sdk\9.0.302\NuGet.targets(186,5): error : Failed to download package 'Microsoft.EntityFrameworkCore.Design.8.0.4' from 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Snapshot/Download/Microsoft.EntityFrameworkCore.Design/8.0.4'. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+       C:\Program Files\dotnet\sdk\9.0.302\NuGet.targets(186,5): error : Response status code does not indicate success: 403. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+         C:\Program Files\dotnet\sdk\9.0.302\NuGet.targets(186,5): error : Failed to download package 'Microsoft.EntityFrameworkCore.SqlServer.8.0.4' from 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Snapshot/Download/Microsoft.EntityFrameworkCore.SqlServer/8.0.4'. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+       C:\Program Files\dotnet\sdk\9.0.302\NuGet.targets(186,5): error : Response status code does not indicate success: 403. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+         C:\Program Files\dotnet\sdk\9.0.302\NuGet.targets(186,5): error : Failed to download package 'Microsoft.EntityFrameworkCore.InMemory.8.0.4' from 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Snapshot/Download/Microsoft.EntityFrameworkCore.InMemory/8.0.4'. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+       C:\Program Files\dotnet\sdk\9.0.302\NuGet.targets(186,5): error : Response status code does not indicate success: 403. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+         I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records\CheckIn.Services.Records.csproj : error NU1301: Failed to retrieve information about 'Microsoft.EntityFrameworkCore.Design' from remote source 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Remote/FindPackagesById()?id='Microsoft.EntityFrameworkCore.Design'&semVerLevel=2.0.0'. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+       I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records\CheckIn.Services.Records.csproj : error NU1301:   Response status code does not indicate success: 403. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+         I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj : error NU1301: Failed to retrieve information about 'Microsoft.EntityFrameworkCore.SqlServer' from remote source 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Remote/FindPackagesById()?id='Microsoft.EntityFrameworkCore.SqlServer'&semVerLevel=2.0.0'.
+       I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj : error NU1301:   Response status code does not indicate success: 403.
+         I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records\CheckIn.Services.Records.csproj : error NU1301: Failed to retrieve information about 'Microsoft.EntityFrameworkCore.Design' from remote source 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Snapshot/FindPackagesById()?id='Microsoft.EntityFrameworkCore.Design'&semVerLevel=2.0.0'. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+       I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records\CheckIn.Services.Records.csproj : error NU1301:   Response status code does not indicate success: 403. [I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj]
+         I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj : error NU1301: Failed to retrieve information about 'Microsoft.EntityFrameworkCore.Design' from remote source 'https://sres.web.boeing.com/artifactory/api/nuget/Nuget-Remote/FindPackagesById()?id='Microsoft.EntityFrameworkCore.Design'&semVerLevel=2.0.0'.
+       I:\Agents\Agent-Win-L\_work\6713\s\CheckIn.Services.Records.Tests\CheckIn.API.Tests.csproj : error NU1301:   Response status code does not indicate success: 403.
+
+    8 Warning(s)
+    19 Error(s)
+
+Time Elapsed 00:00:10.27
+##[error]Error: The process 'C:\Program Files\dotnet\dotnet.exe' failed with exit code 1
+##[error]Packages failed to restore
+Info: Azure Pipelines hosted agents have been updated and now contain .Net 5.x SDK/Runtime along with the older .Net Core version which are currently lts. Unless you have locked down a SDK version for your project(s), 5.x SDK might be picked up which might have breaking behavior as compared to previous versions. You can learn more about the breaking changes here: https://docs.microsoft.com/en-us/dotnet/core/tools/ and https://docs.microsoft.com/en-us/dotnet/core/compatibility/ . To learn about more such changes and troubleshoot, refer here: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/dotnet-core-cli?view=azure-devops#troubleshooting
+Finishing: Restore NuGet packages
